@@ -3,7 +3,7 @@
 	"type":         "mod",
     "name":         "Proxmox",
     "description":  "Provision Proxmox VMs using the Proxmox API",
-	"icon_url":     "icon.png",
+	"icon_url":     "icon.svg",
 	"homepage_url": "https://github.com/FOSSBilling/Proxmox",
     "author":       "Scith & the FOSSBilling Team",
 	"author_url":   "https://github.com/FOSSBilling/",
