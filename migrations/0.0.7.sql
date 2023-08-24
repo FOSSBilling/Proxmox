@@ -30,8 +30,6 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_ipadress` (
   KEY `ip_range_id` (`ip_range_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
 -- --------------------------------------------------------
 -- alter service_proxmox_qemu_template to add auto increment to id, and add vmid field after id
 -- --------------------------------------------------------
@@ -53,12 +51,6 @@ ALTER TABLE `service_proxmox_vm_config_template` ADD `state` VARCHAR(255) NOT NU
 UPDATE `service_proxmox_vm_config_template` SET `state` = 'draft';
 
 -- --------------------------------------------------------
--- rename "format" field to "controller"
--- --------------------------------------------------------
-ALTER TABLE `service_proxmox_vm_config_storage` CHANGE `format` `controller` VARCHAR(255) NOT NULL;
-
-
--- --------------------------------------------------------
 -- add new table for tags and tag relations
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_tag` (
@@ -67,3 +59,26 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_tag` (
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- increment all tables to 0.0.7
+-- --------------------------------------------------------
+ALTER TABLE `service_proxmox_server` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_users` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_storageclass` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_storage` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_lxc_appliance` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_vm_config_template` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_vm_storage_template` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_vm_network_template` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_lxc_config_template` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_lxc_storage_template` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_lxc_network_template` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_qemu_template` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_client_vlan` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_ip_range` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_ipam_settings` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_ipadress` COMMENT = '0.0.7';
+ALTER TABLE `service_proxmox_tag` COMMENT = '0.0.7';
+-- --------------------------------------------------------
