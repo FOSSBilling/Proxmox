@@ -859,4 +859,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// return tags
 		return $tags;
 	}
+
+	// function to save tags for type
+	public function save_tags($data)
+	{
+		// delete all tags for type
+		$this->di['db']->exec("DELETE FROM `service_proxmox_tag` WHERE `type` = '" . $data['type'] . "'");
+		// save all tags for type
+		foreach ($data['tags'] as $tag) {
+			$model = $this->di['db']->dispense('service_proxmox_tag');
+			$model->type = $data['type'];
+			$model->tag = $tag;
+			$this->di['db']->store($model);
+		}
+		// return true
+		return true;
+	}
 }

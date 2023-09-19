@@ -952,6 +952,11 @@ class Admin extends \Api_Abstract
         return $output;
     }
 
+    public function service_add_tags($data)
+    {
+        $output = $this->getService()->save_tags($data);
+        return $output;
+    }
 
     /**
      * Get a vm configuration templates
