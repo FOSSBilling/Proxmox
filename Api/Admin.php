@@ -1504,16 +1504,4 @@ class Admin extends \Api_Abstract
         return $config['version'];
     }
 
-    /**
-     * Checks if the module is configured.
-     * @return bool
-     * 
-     */
-    public function is_configured()
-    {
-     $config = $this->di['mod_config']('Serviceproxmox');
-     if 
-    }
-
-
 } // EOF
