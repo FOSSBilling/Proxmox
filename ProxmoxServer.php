@@ -60,9 +60,9 @@ trait ProxmoxServer
 	*/
 	public function find_empty($product)
 	{
-		$config = json_decode($product->config, 1);
-		$group = $config['group'];
-		$filling = $config['filling'];
+		$productconfig = json_decode($product->config, 1);
+		$group = $productconfig['group'];
+		$filling = $productconfig['filling'];
 
 		// retrieve overprovisioning information from extension settings
 		$config = $this->di['mod_config']('Serviceproxmox');

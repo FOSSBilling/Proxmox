@@ -787,7 +787,7 @@ class Admin extends \Api_Abstract
             'size'              => $storage->size,
             'used'              => $storage->used,
             'free'              => $storage->free,
-            'percent_used'      => round($storage->used / $storage->size * 100, 2),
+            'percent_used'  => ($storage->size == 0 || $storage->used == 0 || $storage->free == 0) ? 0 : round($storage->used / $storage->size * 100, 2),
             // add list of storage classes
             'storageclasses'    => $this->storageclass_get_list($data),
         );
@@ -1503,4 +1503,17 @@ class Admin extends \Api_Abstract
         $config = $this->di['mod_config']('Serviceproxmox');
         return $config['version'];
     }
+
+    /**
+     * Checks if the module is configured.
+     * @return bool
+     * 
+     */
+    public function is_configured()
+    {
+     $config = $this->di['mod_config']('Serviceproxmox');
+     if 
+    }
+
+
 } // EOF

@@ -4,7 +4,7 @@
    {{ 'Manage Proxmox storage' | trans }}
 {% endblock %}
 {% set active_menu = 'system' %}
-
+<script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
 {% block content %}
    <div class="card">
       <div class="card-body">
@@ -24,13 +24,10 @@
                                  
                </label>
                <div class="col-md-6">
-                  <select class="form-select" name="selected_storageclasses[]" multiple>
-                     {% for storageclass in storageclasses %}
-                        <option value="{{ storageclass }}">
-                           {{ storageclass }}
-                        </option>
-                     {% endfor %}
-                  </select>
+                  <label class="form-label col-3">Storage Type Tags:</label>
+                  <div class="col">
+                     <input type="text" name="storageTypeTags[]" id="storageTypeTags" multiple>
+                  </div>
                </div>
             </div>
             <!-- select Storageclass -->
@@ -39,5 +36,81 @@
          </div>
       </div>
    {% endblock %}
-   {% block js %}{% endblock %}
+   {% block js %}
+   <script>
+      $(document).ready(function() {
+         var Type = "storage";
+         var select = new TomSelect('#storageTypeTags', {
+             plugins: ['remove_button'],
+             create: true,
+             delimiter: ',',
+             // Add more options and settings as needed
+         });
+
+         getTagsForType(Type, function(options) {
+             // Add options to the TomSelect instance
+             select.addOption(options);
+         });
+     });
+     function getTagsForType(Type, callback) {
+         // Create the AJAX request
+         var options = [];
+         API.admin.post("serviceproxmox/service_get_tags", {type: Type}, function(response) {
+            for (var key in response.result) {
+               if (response.result.hasOwnProperty(key)) {
+                   var option = {
+                       value: response.result[key].id,
+                       text: response.result[key].name
+                   };
+                   options.push(option);
+               }
+           }
+           // Call the callback function with the options array
+           callback(options);
+          }, function(error) {
+                 // Handle the error response
+                 console.log('Error occurred while saving tags: ' + error);
+                 // Call the callback function with an empty array
+                 callback(options);
+          }, false);
+
+
+     }
+{#         function getTagsForType(Type) {
+         // Create the AJAX request
+         
+     } #}
+     // add an event listener to the Add storage tab button
+{#         var tabNewVmStorageBtn = document.getElementById('tab-new-vm-storage-btn');
+     tabNewVmStorageBtn.addEventListener('click', function(event) {
+         // run the getTagsForType function with the type "storage"
+         getTagsForType("storage");
+     }); #}
+             function saveTagsToDatabase() {
+         // Retrieve the selected tags
+         var selectedTags = $('#storageTypeTags[]').val();
+     
+         // Create the AJAX request
+         $.ajax({
+             url: '/your-endpoint-url', // Replace with the actual URL for your backend endpoint
+             method: 'POST', // or 'GET', depending on your backend implementation
+             data: {
+                 tags: selectedTags
+             },
+             success: function(response) {
+                 // Handle the success response
+                 console.log('Tags saved successfully!');
+             },
+             error: function(xhr, status, error) {
+                 // Handle the error response
+                 console.log('Error occurred while saving tags: ' + error);
+             }
+         });
+     }
+   
+   
+   </script>
+
+
+{% endblock %}
    

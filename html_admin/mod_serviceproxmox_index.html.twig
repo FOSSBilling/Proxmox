@@ -43,7 +43,7 @@
                         {{ 'Proxmox Servers' | trans }}
                     </h2>
                 </div>
-
+                
                 {% set servers_grouped = admin.serviceproxmox_server_get_list() %}
                 {% for group in servers_grouped %}
                 <div style="padding: 0.25rem 1.5rem">
