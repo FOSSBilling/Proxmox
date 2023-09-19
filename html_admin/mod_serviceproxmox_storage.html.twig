@@ -70,46 +70,30 @@
            callback(options);
           }, function(error) {
                  // Handle the error response
-                 console.log('Error occurred while saving tags: ' + error);
+                 console.log('Error occurred while getting tags: ' + error);
                  // Call the callback function with an empty array
                  callback(options);
           }, false);
 
 
      }
-{#         function getTagsForType(Type) {
-         // Create the AJAX request
-         
-     } #}
-     // add an event listener to the Add storage tab button
-{#         var tabNewVmStorageBtn = document.getElementById('tab-new-vm-storage-btn');
-     tabNewVmStorageBtn.addEventListener('click', function(event) {
-         // run the getTagsForType function with the type "storage"
-         getTagsForType("storage");
-     }); #}
-             function saveTagsToDatabase() {
+
+      function saveTagsToDatabase() {
          // Retrieve the selected tags
          var selectedTags = $('#storageTypeTags[]').val();
-     
-         // Create the AJAX request
-         $.ajax({
-             url: '/your-endpoint-url', // Replace with the actual URL for your backend endpoint
-             method: 'POST', // or 'GET', depending on your backend implementation
-             data: {
-                 tags: selectedTags
-             },
-             success: function(response) {
-                 // Handle the success response
-                 console.log('Tags saved successfully!');
-             },
-             error: function(xhr, status, error) {
-                 // Handle the error response
-                 console.log('Error occurred while saving tags: ' + error);
-             }
-         });
-     }
-   
-   
+         API.admin.post("serviceproxmox/service_add_tags", {type: Type, tags: selectedTags}, function(response) {
+         // Show a success message to the user
+         console.log('Tags saved successfully');
+         callback(options);
+         }, function(error) {
+         // Handle the error response
+         console.log('Error occurred while saving tags: ' + error);
+         callback(options);
+         }, false);
+         }
+         
+      }
+
    </script>
 
 
