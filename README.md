@@ -43,7 +43,9 @@ Based on [previous work](https://github.com/scith/BoxBilling_Proxmox) by [Scith]
 ```
 mysql -u root
 MariaDB [(none)]>use fossbilling;
-MariaDB [fossbilling]> show tables;
+MariaDB [fossbilling]> show tables;```
+and then as Example: 
+```
 MariaDB [fossbilling]> drop table service_proxmox_tag;
 ```
 
