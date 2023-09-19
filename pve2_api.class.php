@@ -661,5 +661,3 @@ class PVE2_API {
 
 	// Logout not required, PVEAuthCookie tokens have a 2 hour lifetime.
 }
-
-?>

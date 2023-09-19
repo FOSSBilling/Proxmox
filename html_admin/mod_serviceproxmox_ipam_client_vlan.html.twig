@@ -32,10 +32,11 @@
             </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">
-                    {{ 'VLAN' | trans }}:    
+                    {{ 'VLAN' | trans }}:
                 </label>
                 <div class="col">
-                    <input class="form-control" type="text" name="vlan" value="{{clientnetwork.vlan}}" required placeholder="{{ 'Unique VLAN ID' | trans }}">
+                    <input class="form-control" type="text" name="vlan" id="vlan-input" value="" required placeholder="{{ 'Unique VLAN ID' | trans }}">
+                    <span id="vlan-validation-error" style="display: none; color: red;">Please enter a valid VLAN ID (1-4096).</span>
                 </div>
             </div>
             <div class="mb-3 row">
@@ -56,6 +57,22 @@
    </div>
    {% endblock %}
    {% block js %}
+   <script>
+    document.getElementById('vlan-input').addEventListener('input', function() {
+        var input = document.getElementById('vlan-input');
+        var value = input.value.trim();
+        var errorSpan = document.getElementById('vlan-validation-error');
+        var isNumber = /^\d+$/.test(value);
+        
+        if (!isNumber || parseInt(value) <= 0 || parseInt(value) > 4096) {
+            errorSpan.style.display = 'block';
+            input.setCustomValidity('Invalid VLAN ID');
+        } else {
+            errorSpan.style.display = 'none';
+            input.setCustomValidity('');
+        }
+    });
+    </script>
    {% endblock %}
    
    

@@ -182,4 +182,17 @@ trait ProxmoxServer
 			throw new \Box_Exception("Failed to connect to the server. st");
 		}
 	}
+
+	// function to get available template vms from a server
+	public function getQemuTemplates($server)
+	{
+		$serveraccess = $this->find_access($server);
+		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue);
+		if ($proxmox->login()) {
+			$templates = $proxmox->get("/nodes/" . $server->name . "/qemu");
+			return $templates;
+		} else {
+			throw new \Box_Exception("Failed to connect to the server. st");
+		}
+	}
 }

@@ -36,14 +36,14 @@ class Admin extends \Api_Abstract
         // Retrieve all servers from the database
         $servers = $this->di['db']->find('service_proxmox_server');
         $servers_grouped = array();
-    
+
         // Iterate through each server
         foreach ($servers as $server) {
             // Find all virtual machines (VMs) on this server and calculate CPU cores and RAM usage
             $vms = $this->di['db']->find('service_proxmox', 'server_id=:id', array(':id' => $server->id));
             $server_cpu_cores = 0;
             $server_ram = 0;
-    
+
             // Count the number of VMs
             $vm_count = 0;
             foreach ($vms as $vm) {
@@ -52,23 +52,23 @@ class Admin extends \Api_Abstract
                 $server_ram += $vm->ram;
                 $vm_count++;
             }
-    
+
             // Calculate the percentage of RAM usage if the server's RAM is not zero
             if ($server->ram != 0) {
                 $server_ram_percent = round($server_ram / $server->ram * 100, 0, PHP_ROUND_HALF_DOWN);
             } else {
                 $server_ram_percent = 0;
             }
-    
+
             // Retrieve the overprovisioning factor from the extension's configuration and calculate overprovisioned CPU cores
             $config = $this->di['mod_config']('Serviceproxmox');
             $overprovion_percent = $config['cpu_overprovisioning'];
             $cpu_cores_overprovision = $server->cpu_cores + round($server->cpu_cores * $overprovion_percent / 100, 0, PHP_ROUND_HALF_DOWN);
-    
+
             // Retrieve the RAM overprovisioning factor from the extension's configuration and calculate overprovisioned RAM
             $ram_overprovion_percent = $config['ram_overprovisioning'];
             $ram_overprovision = round($server->ram / 1024 / 1024 / 1024, 0, PHP_ROUND_HALF_DOWN) + round(round($server->ram / 1024 / 1024 / 1024, 0, PHP_ROUND_HALF_DOWN) * $ram_overprovion_percent / 100, 0, PHP_ROUND_HALF_DOWN);
-    
+
             // Store the server's group information in the grouped servers array
             $servers_grouped[$server['group']]['group'] = $server->group;
 
@@ -192,6 +192,28 @@ class Admin extends \Api_Abstract
         return $storageclasses;
     }
 
+    /**
+     * Get list of storage controllers
+     * 
+     * @return array
+     */
+    public function storage_controller_get_list($data)
+    {
+        // Return Array of storage controllers: 	
+        // lsi | lsi53c810 | virtio-scsi-pci | virtio-scsi-single | megasas | pvscsi
+        $storage_controllers = array(
+            'lsi' => 'LSI',
+            'lsi53c810' => 'LSI 53C810',
+            'virtio-scsi-pci' => 'VirtIO SCSI PCI',
+            'virtio-scsi-single' => 'VirtIO SCSI Single',
+            'megasas' => 'MegaSAS',
+            'pvscsi' => 'PVSCSI',
+            'sata' => 'SATA',
+            'ide' => 'IDE',
+        );
+        return $storage_controllers;
+    }
+
     /** *
      * Get list of Active Services
      * 
@@ -238,6 +260,37 @@ class Admin extends \Api_Abstract
         $groups = $this->di['db']->getAll($sql);
         return $groups;
     }
+
+    /** 
+     * get list of servers in a group
+     * 
+     */
+    public function servers_in_group($data)
+    {
+        $sql = "SELECT * FROM `service_proxmox_server` WHERE `group` = '" . $data['group'] . "' AND `active` = 1";
+
+        $servers = $this->di['db']->getAll($sql);
+
+        // remove password & api keys from results
+        foreach ($servers as $key => $server) {
+            $servers[$key]['root_password'] = '';
+            $servers[$key]['tokenvalue'] = '';
+        }
+
+        return $servers;
+    }
+
+    /**
+     * Get list of qemu templates for a server
+     * 
+     */
+    public function qemu_templates_on_server($data)
+    {
+        $sql = "SELECT * FROM `service_proxmox_qemu_template` WHERE `server_id` = '" . $data['server_id'] . "'";
+        $templates = $this->di['db']->getAll($sql);
+        return $templates;
+    }
+
 
     /**
      * Get list of OS types
@@ -293,7 +346,6 @@ class Admin extends \Api_Abstract
             return strcmp($a->headline, $b->headline);
         });
         return $lxc_appliance;
-
     }
 
     // Function to get list of lxc config templates
@@ -439,7 +491,7 @@ class Admin extends \Api_Abstract
         $server->active           = $data['active'];
         $server->created_at       = date('Y-m-d H:i:s');
         $server->updated_at       = date('Y-m-d H:i:s');
-        
+
         $this->di['db']->store($server);
 
         $this->di['logger']->info('Update Proxmox server %s', $server->id);
@@ -561,7 +613,28 @@ class Admin extends \Api_Abstract
             $server->ram_allocated += $value['maxmem'];
         }
         $this->di['db']->store($server);
+        $qemu_templates = $service->getQemuTemplates($server);
+        foreach ($qemu_templates as $key => $value) {
+            if ($value['template'] == 1) {
+                $sql = "SELECT * FROM `service_proxmox_qemu_template` WHERE server_id = " . $server_id . " AND vmid = " . $value['vmid'];
+                $template = $this->di['db']->getAll($sql);
 
+                // if the template exists, update it, otherwise create it
+                if (!empty($template)) {
+                    $template = $this->di['db']->findOne('service_proxmox_qemu_template', 'server_id=:server_id AND vmid=:vmid', array(':server_id' => $server_id, ':vmid' => $value['vmid']));
+                } else {
+                    $template = $this->di['db']->dispense('service_proxmox_qemu_template');
+                }
+                $template->vmid = $value['vmid'];
+                $template->server_id = $server_id;
+                $template->name = $value['name'];
+                $template->created_at = date('Y-m-d H:i:s', $value['ctime']);
+                $template->updated_at = date('Y-m-d H:i:s', $value['ctime']);
+
+                $stored = $this->di['db']->store($template);
+                error_log('template saved: ' . print_r($stored, true));
+            }
+        }
 
         return $hardware_data;
     }
@@ -642,7 +715,7 @@ class Admin extends \Api_Abstract
         }
     }
 
-    
+
     /**
      * Get all available templates from any proxmox server
      * 
@@ -658,9 +731,7 @@ class Admin extends \Api_Abstract
             // check if the appliance already exists
             //$appliance = $this->di['db']->findOne('service_proxmox_lxc_appliance', 'sha512sum=:sha512sum', array(':sha512sum' => $appliance['sha512sum']));
             // if the appliance exists, update it, otherwise create it
-            
-            $template = $this->di['db']->dispense('service_proxmox_lxc_appliance');
-            
+
             $template = $this->di['db']->dispense('service_proxmox_lxc_appliance');
             $template->headline = $appliance['headline'];
             $template->package = $appliance['package'];
@@ -723,7 +794,7 @@ class Admin extends \Api_Abstract
         return $output;
     }
 
-    
+
     /**
      * Update a storage with storageclasses
      * TODO: Implement & Fix functionality
@@ -763,17 +834,20 @@ class Admin extends \Api_Abstract
             'id'            => 'Product id is missing',
             'group'         => 'Server group is missing',
             'filling'       => 'Filling method is missing',
-            'show_stock'    => 'Stock display is missing',
+            'show_stock'    => 'Stock display (Show Stock) is missing',
+            'server'        => 'Server is missing',
             'virt'          => 'Virtualization type is missing',
-            'storage'       => 'Target storage is missing',
-            'memory'        => 'Memory is missing',
-            'cpu'           => 'CPU cores is missing',
-            'network'       => 'Network net0 is missing',
-            'ide0'          => 'Storage ide0 is missing',
-            'clone'         => 'Clone info is missing'
+
         );
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        // Check if virt is lxc or qemu, and if lxc, check if lxc-templ is set. if qemu, check if vm-templ is set.
+        if ($data['virt'] == 'lxc' && empty($data['lxc-templ'])) {
+            throw new \Box_Exception('LXC Template is missing');
+        } elseif ($data['virt'] == 'qemu' && empty($data['vm-templ'])) {
+            throw new \Box_Exception('VM Template is missing');
+        }
 
         // Retrieve associated product
         $product  = $this->di['db']->findOne('product', 'id=:id', array(':id' => $data['id']));
@@ -783,15 +857,10 @@ class Admin extends \Api_Abstract
             'filling'       => $data['filling'],
             'show_stock'    => $data['show_stock'],
             'virt'          => $data['virt'],
-            'storage'       => $data['storage'],
-            'ostemplate'    => $data['ostemplate'],
-            'cdrom'         => $data['cdrom'],
-            'memory'        => $data['memory'],
-            'cpu'           => $data['cpu'],
-            'network'       => $data['network'],
-            'ide0'          => $data['ide0'],
-            'clone'         => $data['clone'],
-            'cloneid'       => $data['cloneid']
+            'server'        => $data['server'],
+            'lxc-templ'     => $data['lxc-templ'],
+            'vm-templ'      => $data['vm-templ'],
+            'vmconftempl' => $data['vmconftempl'],
         );
 
         $product->config         = json_encode($config);
@@ -818,6 +887,17 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Get list of qemu templates
+     * 
+     * @return array
+     */
+    public function service_get_qemutemplates()
+    {
+        $output = $this->getService()->get_qemutemplates();
+        return $output;
+    }
+
+    /**
      * Get list of lxc templates
      * 
      * @return array
@@ -839,6 +919,15 @@ class Admin extends \Api_Abstract
         return $output;
     }
 
+    /**
+     * Get list of ip adresses
+     * 
+     */
+    public function service_get_ip_adresses()
+    {
+        $output = $this->getService()->get_ip_adresses();
+        return $output;
+    }
 
     /**
      * Get list of vlans
@@ -852,12 +941,25 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get list of vm configuration templates
+     * Get list of tags by input
+     * 
+     * @return array
+     */
+    public function service_get_tags($data)
+    {
+        $output = $this->getService()->get_tags($data);
+        return $output;
+    }
+
+
+    /**
+     * Get a vm configuration templates
      * 
      * @return array
      */
     public function vm_config_template_get($data)
     {
+        error_log("vm_config_template_get");
         $vm_config_template = $this->di['db']->findOne('service_proxmox_vm_config_template', 'id=:id', array(':id' => $data['id']));
         if (!$vm_config_template) {
             throw new \Box_Exception('VM template not found');
@@ -879,9 +981,19 @@ class Admin extends \Api_Abstract
         );
 
         return $output;
+    }
 
+    /**
+     * Function to get storages for vm config template
+     * 
+     * @return array
+     */
 
+    public function vm_config_template_get_storages($data)
+    {
+        $vm_config_template = $this->di['db']->find('service_proxmox_vm_storage_template', 'template_id=:id', array(':id' => $data['id']));
 
+        return $vm_config_template;
     }
 
     /**
@@ -911,7 +1023,6 @@ class Admin extends \Api_Abstract
         );
 
         return $output;
-    
     }
 
 
@@ -947,7 +1058,7 @@ class Admin extends \Api_Abstract
         $vlan = $this->di['db']->findOne('service_proxmox_client_vlan', 'id=:id', array(':id' => $data['id']));
         if (!$vlan) {
             throw new \Box_Exception('VLAN not found');
-        } 
+        }
 
         // fill client_name field
         $client = $this->di['db']->findOne('client', 'id=:id', array(':id' => $vlan->client_id));
@@ -960,7 +1071,7 @@ class Admin extends \Api_Abstract
         $output = array(
             'id'            => $vlan->id,
             'client_id'     => $vlan->client_id,
-            'client_name'   => $client->first_name." ".$client->last_name,
+            'client_name'   => $client->first_name . " " . $client->last_name,
             'vlan'          => $vlan->vlan,
             'ip_range'      => $vlan->ip_range,
             'cidr'          => $iprange->cidr,
@@ -969,7 +1080,6 @@ class Admin extends \Api_Abstract
         );
 
         return $output;
-
     }
 
 
@@ -978,18 +1088,10 @@ class Admin extends \Api_Abstract
      * 
      * @return bool
      */
-    public function vm_template_create($data)
+    public function vm_config_template_create($data)
     {
         $required = array(
             'name'     => 'Server name is missing',
-            'description'          => 'Server description is missing',
-            'cpu_cores'          => 'CPU cores are missing',
-            'vmmemory'    => 'memory is missing',
-            'balloon'        => 'Balloon is missing',
-            'os'          => 'OS is missing',
-            'bios'       => 'Bios Type is missing',
-            'onboot'          => 'Start on Boot is missing',
-            'agent'         => 'Run Agent is missing'
         );
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -998,7 +1100,8 @@ class Admin extends \Api_Abstract
         $vm_config_template = $this->di['db']->dispense('service_proxmox_vm_config_template');
         // Fill vm_config_template
         $vm_config_template->name = $data['name'];
-        $vm_config_template->description = $data['description'];
+        $vm_config_template->state = "draft";
+        /* $vm_config_template->description = $data['description'];
         $vm_config_template->cores = $data['cpu_cores'];
         $vm_config_template->memory = $data['vmmemory'];
         $vm_config_template->balloon = $data['balloon'];
@@ -1015,12 +1118,12 @@ class Admin extends \Api_Abstract
         $vm_config_template->onboot = $data['onboot'];
         $vm_config_template->agent = $data['agent'];
         $vm_config_template->created_at = date('Y-m-d H:i:s');
-        $vm_config_template->updated_at = date('Y-m-d H:i:s');
+        $vm_config_template->updated_at = date('Y-m-d H:i:s'); */
         $this->di['db']->store($vm_config_template);
 
-        
+
         $this->di['logger']->info('Create VM config Template %s', $vm_config_template->id);
-        return true;
+        return $vm_config_template;
     }
 
     /**
@@ -1080,7 +1183,7 @@ class Admin extends \Api_Abstract
     public function vm_template_delete($id)
     {
         $vm_config_template = $this->di['db']->findOne('service_proxmox_vm_config_template', 'id = ?', [$id]);
-        
+
         // TODO: Check if vm_config_template is used by any product
 
         $this->di['db']->trash($vm_config_template);
@@ -1115,16 +1218,16 @@ class Admin extends \Api_Abstract
         $lxc_config_template->swap = $data['swap'];
         $lxc_config_template->template_id = $data['ostemplate'];
         // get os template headline from $di['db'] and set it to $lxc_config_template->ostemplate
-        $ostemplate = $this->di['db']->findOne('service_proxmox_lxc_template', 'id = ?', [$data['ostemplate']]);
+        $ostemplate = $this->di['db']->findOne('service_proxmox_lxc_appliance', 'id = ?', [$data['ostemplate']]);
         $lxc_config_template->ostemplate = $ostemplate->headline;
         $lxc_config_template->onboot = $data['onboot'];
         $lxc_config_template->created_at = date('Y-m-d H:i:s');
         $lxc_config_template->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($lxc_config_template);
-        
+
         $this->di['db']->store($lxc_config_template);
 
-        
+
         $this->di['logger']->info('Create LXC config Template %s', $lxc_config_template->id);
         return true;
     }
@@ -1211,7 +1314,7 @@ class Admin extends \Api_Abstract
         $ip_range->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($ip_range);
 
-        
+
         $this->di['logger']->info('Create IP Network %s', $ip_range->id);
         return true;
     }
@@ -1288,7 +1391,7 @@ class Admin extends \Api_Abstract
         $client_network->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client_network);
 
-        
+
         $this->di['logger']->info('Create Client Network %s', $client_network->id);
         return true;
     }
@@ -1325,7 +1428,7 @@ class Admin extends \Api_Abstract
 
 
     /**
-     * Delete client vlan
+     * Delete client vlanx
      * 
      * @param  int $id
      * @return bool
@@ -1342,7 +1445,7 @@ class Admin extends \Api_Abstract
     /* ########################################  Permissions  ############################################ */
     /* ################################################################################################### */
 
-   
+
     /* ################################################################################################### */
     /* ########################################  Maintenance  ############################################ */
     /* ################################################################################################### */
@@ -1399,5 +1502,4 @@ class Admin extends \Api_Abstract
         $config = $this->di['mod_config']('Serviceproxmox');
         return $config['version'];
     }
-
 } // EOF

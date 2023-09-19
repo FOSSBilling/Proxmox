@@ -21,6 +21,19 @@
             </a>
         </li>
         <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-ipadress" data-bs-toggle="tab">
+                {{ 'IP Addresses' | trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-ipadress" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New IP Address' | trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-vlans" data-bs-toggle="tab">
                 {{ 'VLANs' | trans }}
             </a>
@@ -89,7 +102,7 @@
                                     {{ iprange.broadcast }}
                                 </td>
                                 <td>
-                                    {{ iprange.type }} GB
+                                    {{ iprange.type }}
                                 </td>
                                 <td>
                                     <a class="btn btn-icon" href="{{ '/serviceproxmox/ipam/iprange'|alink }}/{{ iprange.id }}">
@@ -111,7 +124,7 @@
         <div class="tab-content">
             <div class="tab-pane fade" id="tab-new-iprange" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="admin/serviceproxmox/iprange_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}">
+                    <form method="post" action="admin/serviceproxmox/ip_range_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">
@@ -126,7 +139,8 @@
                                 {{ 'Gateway' | trans }}:
                             </label>
                             <div class="col">
-                                <input class="form-control" type="text-area" name="gateway" value="" required placeholder="{{ 'Gateway' | trans }}">
+                                <input class="form-control" type="text-area" id='gateway' name="gateway" value="" required placeholder="{{ 'Gateway' | trans }}">
+                            <span id="gateway-validation-error" style="display: none; color: red;">Please enter a valid Gateway IP.</span>
                             </div>
                         </div>
                         <div class="mb-3 row">
@@ -144,10 +158,13 @@
                         </div>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">
-                                {{ 'Broadcast' | trans }}:
+                                {{ 'Network & Broadcast' | trans }}:
                             </label>
                             <div class="col">
-                                <input class="form-control" type="text-area" id='broadcast' name="broadcast" value="" required placeholder="{{ 'Broadcast' | trans }}">
+                                <input class="form-control" type="text-area" id='network' name="network" value="" required placeholder="{{ 'Network' | trans }}" readonly>
+                            </div>
+                            <div class="col">
+                                <input class="form-control" type="text-area" id='broadcast' name="broadcast" value="" required placeholder="{{ 'Broadcast' | trans }}"  readonly>
                             </div>
                         </div>
                         <div class="mb-3 row">
@@ -175,6 +192,156 @@
             </div>
         </div>
         <!-- ##############################################################################
+                                    List IP Adresses
+            ############################################################################## -->
+            <div class="tab-content">
+             <div class="tab-pane fade show" id="tab-ipadress" role="tabpanel">
+                 <div class="card-body">
+                     <h2>
+                         {{ 'IP Addresses' | trans }}
+                     </h2>
+                 </div>
+                 <div class="card-body">
+                     {% set ipadresses = admin.serviceproxmox_service_get_ip_adresses() %}
+                     <div style="padding: 0.25rem 1.5rem">
+                         <strong>
+                             All IP Adresses
+                         </strong>
+                     </div>
+                     <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                         <thead>
+                             <tr>
+                                 <th>
+                                     {{ 'IP' | trans }}
+                                 </th>
+                                 <th>
+                                     {{ 'IP Range' | trans }}
+                                 </th>
+                                 <th>
+                                     {{ 'Dedicated' | trans }}
+                                 </th>
+                                 <th>
+                                     {{ 'Gateway' | trans }}
+                                 </th>
+                                 <th>
+                                    {{ 'VLAN' | trans }}
+                                </th>
+                                 <th class="w-1"></th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                         {% for ipadress in ipadresses %}
+                             <tr>
+                                 <td>
+                                     {{ ipadress.ip }}
+                                 </td>
+                                 <td>
+                                    // display the ip_range cidr for ipaddress.ip_range_id found in the ip_ranges variable
+                                    {% for ip_range in ip_ranges %}
+                                        {% if ip_range.id == ipadress.ip_range_id %}
+                                            {{ ip_range.cidr }}
+                                        {% endif %}
+                                    {% endfor %}
+                                 </td>
+                                 <td>
+                                     {{ ipadress.dedicated }}
+                                 </td>
+                                 <td>
+                                     {{ ipadress.gateway }}
+                                 </td>
+                                 <td>
+                                    {{ ipadress.vlan }}
+                                </td>
+                                 <td>
+                                     <a class="btn btn-icon" href="{{ '/serviceproxmox/ipam/ipadress'|alink }}/{{ ipadress.id }}">
+                                         <svg class="icon">
+                                             <use xlink:href="#edit" />
+                                         </svg>
+                                     </a>
+                                 </td>
+                             </tr>
+                         {% endfor %}
+                         </tbody>
+                     </table>
+                 </div>
+             </div>
+         </div>
+         <!-- ##############################################################################
+                                 Form to create a new IP Adress
+              ############################################################################## -->
+         <div class="tab-content">
+             <div class="tab-pane fade" id="tab-new-ipadress" role="tabpanel">
+                 <div class="card-body">
+                     <form method="post" action="admin/serviceproxmox/ipam/ipadress_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}">
+                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+                         <div class="mb-3 row">
+                             <label class="form-label col-3 col-form-label">
+                                 {{ 'IP' | trans }}:    
+                             </label>
+                             <div class="col">
+                                 <input class="form-control" type="text" id='cidr' name="cidr" value="" required placeholder="{{ 'Unique, non overlapping network in CIDR Notation (A.B.C.D/24)' | trans }}">
+                             </div>
+                         </div>
+                         <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'IP Range: ' | trans }}:
+                            </label>
+
+                            <div class="col">
+                                <select class="form-select" name="client_id">
+                                {% for iprange in ipranges %}
+                                    <option value="{{ iprange.id }}">{{ iprange.cidr }}: {{ iprange.network }} - {{ iprange.broadcast }}</option>
+                                {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                         <div class="mb-3 row">
+                             <label class="form-label col-3 col-form-label">
+                                 {{ 'Dedicated IP Address' | trans }}:                                                                            
+                             </label>
+                             <div class="col">
+                                 <div class="form-check form-check-inline">
+                                     <input class="form-check-input" id="radioTypePublic" type="radio" name="type" value="1">
+                                     <label class="form-check-label" for="radioTypePublic">
+                                         {{ 'Yes' | trans }}
+                                     </label>
+                                 </div>
+                                 <div class="form-check form-check-inline">
+                                     <input class="form-check-input" id="radioTypePrivate" type="radio" name="type" value="0" checked>
+                                     <label class="form-check-label" for="radioTypePrivate">
+                                         {{ 'No' | trans }}
+                                     </label>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="mb-3 row">
+                             <label class="form-label col-3 col-form-label">
+                                 {{ 'Gateway ' | trans }}:
+                             </label>
+                             <div class="col">
+                                 <input class="form-control" type="text-area" id='gateway' name="gateway" value="" required placeholder="{{ 'Gateway' | trans }}">
+                             <span id="gateway-validation-error" style="display: none; color: red;">Please enter a valid Gateway IP.</span>
+                             </div>
+                         </div>
+                         <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'VLAN: ' | trans }}:
+                            </label>
+                            {% set client_vlans = admin.serviceproxmox_service_get_vlans() %}
+                            <div class="col">
+                                <select class="form-select" name="client_id">
+                                {% for vlan in client_vlans %}
+                                    <option value="{{ vlan.id }}">{{ vlan.vlan }}: {{ vlan.client_name }} </option>
+                                {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                         <input type="submit" value="{{ 'Save IP Range' | trans }}" class="btn btn-primary">
+                     </form>
+                 </div>
+             </div>
+         </div>
+        <!-- ##############################################################################
         List Client VLANs
         ############################################################################## -->
         <div class="tab-content">
@@ -186,7 +353,7 @@
                 </div>
                 <div class="card-body">
    
-                {% set client_networks = admin.serviceproxmox_service_get_vlans() %}
+                {% set client_vlans = admin.serviceproxmox_service_get_vlans() %}
                     <div style="padding: 0.25rem 1.5rem">
                         <strong>
                             All Client VLANs
@@ -208,24 +375,24 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for client_network in client_networks %}
+                            {% for client_vlan in client_vlans %}
                             <tr>
                                 <td>
-                                    {{ client_network.client_name }}
+                                    {{ client_vlan.client_name }}
                                 </td>
                                 <td>
-                                    {{ client_network.vlan }}
+                                    {{ client_vlan.vlan }}
                                 </td>
                                 <td>
-                                    {{ client_network.ip_range }}
+                                    {{ client_vlan.ip_range }}
                                 </td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ '/serviceproxmox/ipam/clientnetwork'|alink }}/{{ client_network.id }}">
+                                    <a class="btn btn-icon" href="{{ '/serviceproxmox/ipam/client_vlan'|alink }}/{{ client_vlan.id }}">
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?' | trans }}" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}" href="{{ 'api/admin/serviceproxmox/client_network_delete'|link({ 'id': client_network.id, 'CSRFToken': CSRFToken }) }}">
+                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?' | trans }}" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}" href="{{ 'api/admin/serviceproxmox/client_vlan_delete'|link({ 'id': client_vlan.id, 'CSRFToken': CSRFToken }) }}">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -244,7 +411,7 @@
         <div class="tab-content">
             <div class="tab-pane fade" id="tab-new-vlan" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="admin/serviceproxmox/client_network_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}">
+                    <form method="post" action="admin/serviceproxmox/client_vlan_create" class="api-form" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">
@@ -261,10 +428,11 @@
                         </div>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">
-                                {{ 'VLAN' | trans }}:    
+                                {{ 'VLAN' | trans }}:
                             </label>
                             <div class="col">
-                                <input class="form-control" type="text" name="vlan" value="" required placeholder="{{ 'Unique VLAN ID' | trans }}">
+                                <input class="form-control" type="text" name="vlan" id="vlan-input" value="" required placeholder="{{ 'Unique VLAN ID' | trans }}">
+                                <span id="vlan-validation-error" style="display: none; color: red;">Please enter a valid VLAN ID (1-4096).</span>
                             </div>
                         </div>
                         <div class="mb-3 row">
@@ -340,15 +508,29 @@
      }
      
      function updateOutput(value) {
-         var output = document.getElementById('subnet_sizeOutput');
-         var cidrInput = document.getElementById('cidr');
-         var ip = cidrInput.value.split('/')[0]; // get the IP part of the CIDR notation
-         var ipRange = calculateIPRange(ip, 32 - value);
-     
-         output.value = Math.pow(2, value) + ' Address(es), /' + (32 - value) + ', IP Range: ' + ipRange[0] + ' - ' + ipRange[1];
-         cidrInput.value = ip + '/' + (32 - value); // update the CIDR notation
-         document.getElementById('broadcast').value = ipRange[1];
-     }
+        var output = document.getElementById('subnet_sizeOutput');
+        var cidrInput = document.getElementById('cidr');
+        var ip = cidrInput.value.split('/')[0]; // get the IP part of the CIDR notation
+        var ipRange = calculateIPRange(ip, 32 - value);
+    
+        output.value = Math.pow(2, value) + ' Address(es), /' + (32 - value) + ', IP Range: ' + ipRange[0] + ' - ' + ipRange[1];
+        cidrInput.value = ip + '/' + (32 - value); // update the CIDR notation
+        document.getElementById('network').value = ipRange[0];
+        document.getElementById('broadcast').value = ipRange[1];
+        var gatewayInput = document.getElementById('gateway');        
+        var errorSpan = document.getElementById('gateway-validation-error');
+        var gatewayIpLong = ip2long(gatewayInput.value);
+        var ipStartLong = ip2long(ipRange[0]);
+        var ipEndLong = ip2long(ipRange[1]);
+
+        if (gatewayIpLong < ipStartLong || gatewayIpLong > ipEndLong) {
+            gatewayInput.setCustomValidity('The gateway IP is not within the network range!');
+            errorSpan.style.display = 'block';
+        } else {
+            gatewayInput.setCustomValidity('');
+            errorSpan.style.display = 'none';
+        }
+    }
      
      document.addEventListener('DOMContentLoaded', function() {
          var subnetSizeInput = document.getElementById('subnet_size');
@@ -361,9 +543,43 @@
      
          subnetSizeInput.addEventListener('input', function() {
              updateOutput(this.value);
-         });
-     });
+         })
+     })
      
+     document.getElementById('gateway').addEventListener('input', function() {
+        var subnetSizeInput = document.getElementById('subnet_size');
+        var cidrInput = document.getElementById('cidr');
+        var ip = cidrInput.value.split('/')[0]; // get the IP part of the CIDR notation
+        var ipRange = calculateIPRange(ip, 32 - subnetSizeInput);
+        var gatewayInput = document.getElementById('gateway');
+        var errorSpan = document.getElementById('gateway-validation-error');
+        var gatewayIpLong = ip2long(gatewayInput.value);
+        var ipStartLong = ip2long(ipRange[0]);
+        var ipEndLong = ip2long(ipRange[1]);
+
+        if (gatewayIpLong < ipStartLong || gatewayIpLong > ipEndLong) {
+            gatewayInput.setCustomValidity('The gateway IP is not within the network range!');
+            errorSpan.style.display = 'block';
+        } else {
+            gatewayInput.setCustomValidity('');
+            errorSpan.style.display = 'none';
+        }
+     })
+
+     document.getElementById('vlan-input').addEventListener('input', function() {
+        var input = document.getElementById('vlan-input');
+        var value = input.value.trim();
+        var errorSpan = document.getElementById('vlan-validation-error');
+        var isNumber = /^\d+$/.test(value);
+        
+        if (!isNumber || parseInt(value) <= 0 || parseInt(value) > 4096) {
+            errorSpan.style.display = 'block';
+            input.setCustomValidity('Invalid VLAN ID');
+        } else {
+            errorSpan.style.display = 'none';
+            input.setCustomValidity('');
+        }
+    })
     
 </script>
 {% endblock %}

@@ -40,36 +40,36 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     public function fetchNavigation()
     {
         return array(
-            'group' => [
+            'group' => array(
                 'index' => 550,
                 'location' => 'proxmox',
                 'label' => __trans('Proxmox'),
                 'class' => 'server',
                 'sprite_class' => 'dark-sprite-icon sprite-graph',
+            ),
+            'subpages' => array(
+                [
+                    'location' => 'proxmox',
+                    'label' => __trans('Proxmox Servers'),
+                    'uri' => $this->di['url']->adminLink('serviceproxmox'),
+                    'index' => 100,
+                    'class' => '',
                 ],
-                'subpages' => [
-                    [
-                        'location' => 'proxmox',
-                        'label' => __trans('Proxmox Servers'),
-                        'uri' => $this->di['url']->adminLink('serviceproxmox'),
-                        'index' => 100,
-                        'class' => '',
-                    ],
-                    [
-                        'location' => 'proxmox',
-                        'label' => __trans('Proxmox Templates'),
-                        'uri' => $this->di['url']->adminLink('serviceproxmox/templates'),
-                        'index' => 200,
-                        'class' => '',
-                    ],
-                    [
-                        'location' => 'proxmox',
-                        'label' => __trans('IP Address Management'),
-                        'uri' => $this->di['url']->adminLink('serviceproxmox/ipam'),
-                        'index' => 200,
-                        'class' => '',
-                    ],
+                [
+                    'location' => 'proxmox',
+                    'label' => __trans('Proxmox Templates'),
+                    'uri' => $this->di['url']->adminLink('serviceproxmox/templates'),
+                    'index' => 200,
+                    'class' => '',
                 ],
+                [
+                    'location' => 'proxmox',
+                    'label' => __trans('IP Address Management'),
+                    'uri' => $this->di['url']->adminLink('serviceproxmox/ipam'),
+                    'index' => 300,
+                    'class' => '',
+                ],
+            ),
         );
     }
 
@@ -85,6 +85,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/serviceproxmox/maintenance/backup', 'start_backup', null, get_class($this));
         $app->get('/serviceproxmox/server/:id', 'get_server', array('id' => '[0-9]+'), get_class($this));
         $app->get('/serviceproxmox/storage', 'get_storage', null, get_class($this));
+        $app->get('/serviceproxmox/server/by_group/:id', 'get_server_by_group',  array('id' => '[0-9]+'), get_class($this));
         $app->get('/serviceproxmox/storage/:id', 'get_storage', array('id' => '[0-9]+'), get_class($this));
         $app->get('/serviceproxmox/storageclass', 'get_storage', null, get_class($this));
         $app->get('/serviceproxmox/storageclass/:id', 'get_storageclass ', array('id' => '[0-9]+'), get_class($this));
@@ -112,16 +113,15 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function get_templates(\Box_App $app)
     {
-        $this->di['is_admin_logged'];
         return $app->render('mod_serviceproxmox_templates');
     }
+
 
     /**
      * Renders the admin area ipam page
      */
     public function get_ipam(\Box_App $app)
     {
-        $this->di['is_admin_logged'];
         return $app->render('mod_serviceproxmox_ipam');
     }
 
@@ -130,9 +130,15 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function get_server(\Box_App $app, $id)
     {
-        $this->di['is_admin_logged'];
         $api = $this->di['api_admin'];
         $server = $api->Serviceproxmox_server_get(array('server_id' => $id));
+        return $app->render('mod_serviceproxmox_server', array('server' => $server));
+    }
+
+    public function get_server_by_group(\Box_App $app, $id)
+    {
+        $api = $this->di['api_admin'];
+        $server = $api->Serviceproxmox_servers_in_group(array('group' => $id));
         return $app->render('mod_serviceproxmox_server', array('server' => $server));
     }
 
@@ -141,7 +147,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function get_storage(\Box_App $app, $id)
     {
-        $this->di['is_admin_logged'];
         $api = $this->di['api_admin'];
         $storage = $api->Serviceproxmox_storage_get(array('storage_id' => $id));
         return $app->render('mod_serviceproxmox_storage', array('storage' => $storage));
@@ -152,7 +157,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function get_ip_range(\Box_App $app, $id)
     {
-        $this->di['is_admin_logged'];
         $api = $this->di['api_admin'];
         $ip_range = $api->Serviceproxmox_ip_range_get(array('id' => $id));
         return $app->render('mod_serviceproxmox_ipam_iprange', array('ip_range' => $ip_range));
@@ -163,10 +167,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function client_vlan(\Box_App $app, $id)
     {
-        $this->di['is_admin_logged'];
         $api = $this->di['api_admin'];
         $client_vlan = $api->Serviceproxmox_vlan_get(array('id' => $id));
-        return $app->render('mod_serviceproxmox_ipam_client_vlan', array('client_vlan' => $client_vlan));
+        return $app->render('mod_serviceproxmox_ipam_client_vlan', ['client_vlan' => $client_vlan]);
     }
 
     /**
@@ -174,7 +177,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function get_lxc_config_template(\Box_App $app, $id)
     {
-        $this->di['is_admin_logged'];
         $api = $this->di['api_admin'];
         $lxc_config_template = $api->Serviceproxmox_lxc_config_template_get(array('id' => $id));
         return $app->render('mod_serviceproxmox_templates_lxc', array('lxc_config_template' => $lxc_config_template));
@@ -185,7 +187,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function get_vm_config_template(\Box_App $app, $id)
     {
-        $this->di['is_admin_logged'];
+        error_log("Controller get_vm_config_template");
         $api = $this->di['api_admin'];
         $vm_config_template = $api->Serviceproxmox_vm_config_template_get(array('id' => $id));
         return $app->render('mod_serviceproxmox_templates_qemu', array('vm_config_template' => $vm_config_template));
@@ -196,11 +198,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function start_backup(\Box_App $app)
     {
-        $this->di['is_admin_logged'];
+
         $api = $this->di['api_admin'];
         $backup = $api->Serviceproxmox_proxmox_backup_config('backup');
         return $app->redirect('extension/settings/serviceproxmox');
     }
-
 }
-

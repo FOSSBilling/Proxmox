@@ -212,6 +212,12 @@
                 <div class="tab-pane fade" id="tab-backup" role="tabpanel">
 					<form method="post" action="admin/serviceproxmox/proxmox_restore_backup" class="api-form" data-api-redirect="{{ 'extension/settings/serviceproxmox'|alink }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+						<div class="card-body">
+							<h2 class="card-title">{{ 'Backups'|trans }}</h2>
+						</div>
+						<div class="card-body">
+							<a href="{{ 'admin/serviceproxmox/maintenance/backup'|alink }}" class="btn btn-primary">{{ 'Create Backup'|trans }}</a>
+						</div>
                         <div class="card-body">
                             {% set backups = admin.serviceproxmox_proxmox_list_backups() %}
 							<div class="row mb-3">

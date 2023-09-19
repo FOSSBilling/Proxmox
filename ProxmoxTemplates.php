@@ -26,7 +26,7 @@ trait ProxmoxTemplates
 	/* ################################################################################################### */
 	/* ####################################  VM Template Mgmt  ########################################### */
 	/* ################################################################################################### */
-	
+
 	// Function that gets all the VM templates and returns them as an array
 	public function get_vmtemplates()
 	{
@@ -42,5 +42,34 @@ trait ProxmoxTemplates
 		// get all the LXC templates from the service_proxmox_lxc_config_template table
 		$templates = $this->di['db']->findAll('service_proxmox_lxc_config_template');
 		return $templates;
+	}
+
+	// Function that gets all qemu templates and returns them as an array
+	public function get_qemutemplates()
+	{
+		// get all the qemu templates from the service_proxmox_qemu_template table
+		$qemu_templates = $this->di['db']->findAll('service_proxmox_qemu_template');
+		// Get server name for each template
+		foreach ($qemu_templates as $qemu_template) {
+			$server = $this->di['db']->getExistingModelById('service_proxmox_server', $qemu_template->server_id);
+			$qemu_template->server_name = $server->name;
+		}
+		return $qemu_templates;
+	}
+
+	// Function that gets a vm config template by id
+	public function get_vmconfig($id)
+	{
+		// get the vm config template from the service_proxmox_vm_config_template table
+		$template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $id);
+		return $template;
+	}
+
+	// Function that gets a lxc config template by id
+	public function get_lxc_conftempl($id)
+	{
+		// get the lxc config template from the service_proxmox_lxc_config_template table
+		$template = $this->di['db']->getExistingModelById('service_proxmox_lxc_config_template', $id);
+		return $template;
 	}
 }
