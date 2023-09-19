@@ -32,10 +32,28 @@ Based on [previous work](https://github.com/scith/BoxBilling_Proxmox) by [Scith]
 ## Requirements
 - Tested on Proxmox VE 7 or higher, PVE 6 should work too
 
-## Installation
-- Copy the "Serviceproxmox" folder in *modules*
-- Configure the Proxmox module in the FOSSBilling admin area
-- Add new Proxmox servers
+
+## Installation ( For 0.1.0 Preview!)
+
+### Prerequisites
+- Make sure you uninstall the Module first by going to Extensions -> Overview
+- Then, make sure that you move the pmxconfig folder in your Fossbilling rootfolder so the new installer doesn't accidentially restore an old backup.
+```mv /var/www/pmxconfig /var/www/pmxold```
+- Make sure you don't have any tables beginning with service_promxox in your database anymore:
+```
+mysql -u root
+MariaDB [(none)]>use fossbilling;
+MariaDB [fossbilling]> show tables;
+MariaDB [fossbilling]> drop table service_proxmox_tag;
+```
+
+### Installation for 0.1.0 Preview
+- Go to the Modules folder (f.ex: ```cd /var/www/modules```)
+- Run ```git clone https://github.com/FOSSBilling/Proxmox.git Serviceproxmox```
+- Go Inside the directory ```cd Serviceproxmox/```
+- Checkout the 0.1.0 branch ```git checkout 0.1.0```
+- Install the Module in the Web interface.
+- Add new Proxmox servers.
 - "Prepare Server" on each Proxmox server (this will create the necessary API user and role) (The Plus Button in the Server List)
 - Add new Proxmox products with the correct VM settings setup
 
