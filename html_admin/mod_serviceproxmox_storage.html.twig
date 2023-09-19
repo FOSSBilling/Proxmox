@@ -4,7 +4,7 @@
    {{ 'Manage Proxmox storage' | trans }}
 {% endblock %}
 {% set active_menu = 'system' %}
-<script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
+
 {% block content %}
    <div class="card">
       <div class="card-body">
@@ -37,6 +37,7 @@
       </div>
    {% endblock %}
    {% block js %}
+   <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
    <script>
       $(document).ready(function() {
          var Type = "storage";
