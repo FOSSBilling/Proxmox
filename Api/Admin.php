@@ -174,8 +174,9 @@ class Admin extends \Api_Abstract
                 'size'          => $storage->size,
                 'used'          => $storage->used,
                 'free'          => $storage->free,
-                'percent_used'  => round($storage->used / $storage->size * 100, 2),
+                'percent_used'  => ($storage->size == 0 || $storage->used == 0 || $storage->free == 0) ? 0 : round($storage->used / $storage->size * 100, 2),
             );
+            
         }
         return $storages_grouped;
     }
