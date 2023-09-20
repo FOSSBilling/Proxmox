@@ -356,6 +356,25 @@ class Admin extends \Api_Abstract
         return $lxc_tmpl;
     }
 
+    // Function to enable qemu template
+    public function vm_config_template_enable($data)
+    {
+        error_log("vm_config_template_enable: " . $data['id']);
+        $vm_config_template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $data['id'], 'VM Config Template not found');
+        $vm_config_template->state = 'active';
+        $this->di['db']->store($vm_config_template);
+        return $vm_config_template;
+    }
+
+    // Function to disable qemu template
+    public function vm_config_template_disable($data)
+    {
+        error_log("vm_config_template_disable: " . $data['id']);
+        $vm_config_template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $data['id'], 'VM Config Template not found');
+        $vm_config_template->state = 'inactive';
+        $this->di['db']->store($vm_config_template);
+        return $vm_config_template;
+    }
     /* ################################################################################################### */
     /* ##########################################  Servers  ############################################## */
     /* ################################################################################################### */
@@ -1041,6 +1060,7 @@ class Admin extends \Api_Abstract
 
     public function vm_config_template_get_storages($data)
     {
+        error_log("vm_config_template_get_storages: " . print_r($data, true));
         $vm_config_template = $this->di['db']->find('service_proxmox_vm_storage_template', 'template_id=:id', array(':id' => $data['id']));
 
         return $vm_config_template;

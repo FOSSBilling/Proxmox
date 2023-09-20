@@ -100,11 +100,11 @@
                                 {{ template.name }} - 
                                 <!-- add pill with status of template: draft = grey, active = green, inactive = red -->
                                 {% if template.state == 'draft' %}
-                                {% set statusClass = 'badge badge-secondary' %}
+                                {% set statusClass = 'badge bg-secondary' %}
                               {% elseif template.state == 'active' %}
-                                {% set statusClass = 'badge badge-success' %}
+                                {% set statusClass = 'badge bg-success' %}
                               {% elseif template.state == 'inactive' %}
-                                {% set statusClass = 'badge badge-danger' %}
+                                {% set statusClass = 'badge bg-danger' %}
                               {% endif %}
                               
                               <span class="{{ statusClass }}">
@@ -396,18 +396,6 @@
                         </div>
                     </div>
                     <div class="card-footer text-end">
-                            <a class="btn btn-error" href="{{ '/serviceproxmox/templates/:id/disable'|alink }}/{{ template.id }}">
-                                <svg class="icon">
-                                    <use xlink:href="#close" />
-                                </svg>
-                                {{ 'Disable' | trans }}&nbsp;&nbsp;
-                            </a>
-                            <a class="btn btn-success" href="{{ '/serviceproxmox/templates/:id/enable'|alink }}/{{ template.id }}">
-                                <svg class="icon">
-                                    <use xlink:href="#check" />
-                                </svg>
-                                {{ 'Enable' | trans }}&nbsp;&nbsp;
-                            </a>
                         <input type="submit" value="{{ 'Save VM Template' | trans }}" class="btn btn-primary">
                     </div>
                     </form>

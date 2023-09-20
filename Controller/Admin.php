@@ -97,6 +97,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/serviceproxmox/templates/lxc_config/:id', 'get_lxc_config_template', array('id' => '[0-9]+'), get_class($this));
         $app->get('/serviceproxmox/templates/vm_config', 'get_vm_config_template', null, get_class($this));
         $app->get('/serviceproxmox/templates/vm_config/:id', 'get_vm_config_template', array('id' => '[0-9]+'), get_class($this));
+        $app->get('/serviceproxmox/templates/enable/:id', 'enable_template', array('id' => '[0-9]+'), get_class($this));
+        $app->get('/serviceproxmox/templates/disable/:id', 'disable_template', array('id' => '[0-9]+'), get_class($this));
     }
 
     /**
@@ -116,7 +118,27 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_serviceproxmox_templates');
     }
 
+    /**
+     * Enables the QEMU Template
+     *
+     */
+    public function enable_template(\Box_App $app, $id)
+    {
+        $api = $this->di['api_admin'];
+        $api->Serviceproxmox_vm_config_template_enable(array('id' => $id));
+        return $app->redirect('serviceproxmox/templates');
+    }
 
+    /**
+     * Disables the QEMU Template
+     *
+     */
+    public function disable_template(\Box_App $app, $id)
+    {
+        $api = $this->di['api_admin'];
+        $api->Serviceproxmox_vm_config_template_disable(array('id' => $id));
+        return $app->redirect('serviceproxmox/templates');
+    }
     /**
      * Renders the admin area ipam page
      */
