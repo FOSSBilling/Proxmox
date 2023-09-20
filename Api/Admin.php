@@ -774,7 +774,7 @@ class Admin extends \Api_Abstract
     {
         // Retrieve associated storage
         $storage  = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['storage_id']));
-
+        $server = $this->di['db']->getExistingModelById('service_proxmox_server', $storage->server_id, 'Server not found');
         $output = array(
             'id'                => $storage->id,
             'name'              => $storage->name,
@@ -790,6 +790,7 @@ class Admin extends \Api_Abstract
             'percent_used'  => ($storage->size == 0 || $storage->used == 0 || $storage->free == 0) ? 0 : round($storage->used / $storage->size * 100, 2),
             // add list of storage classes
             'storageclasses'    => $this->storageclass_get_list($data),
+            'server_name'       => $server->name,
         );
 
         return $output;
@@ -807,16 +808,47 @@ class Admin extends \Api_Abstract
     public function storage_update($data)
     {
         $required = array(
-            'id'    => 'Storage id is missing',
-            'storageclass'    => 'Storage class is missing',
+            'storageid'    => 'Storage id is missing',
+            'storageTypeTags'    => 'Storage tags are missing',
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         // Retrieve associated storage
-        $storage = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['id']));
-        $storage->storageclass = $data['storageclass'];
+        $storage = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['storageid']));
+        
+        // $data['storageTypeTags']; contains an array of tags like this: Array([0] => ssd,hdd,sdf)
+        // This needs to be split up and stored as valid json in the storage table
+        error_log('storageTypeTags: ' . print_r($data['storageTypeTags'], true));
+        // Assuming you have $data['storagetype'] populated
+        $storageType = $data['storagetype'];
+        $tagArray = [];
+        foreach ($data['storageTypeTags'] as $tag) {
+            $splitTags = explode(',', $tag);
+            $tagArray = array_merge($tagArray, $splitTags); // Flat array of tags
+        }
+    
+        // for every tag in the tagArray, save the id to the error_log
+        $jsonArray = [];
+        foreach ($tagArray as $tagId) {
+            // Fetch the tag details from DB
+            $tag_from_db = $this->di['db']->findOne('service_proxmox_tag', 'id=:id AND type=:type', [
+                ':id' => $tagId,
+                ':type' => $storageType
+            ]);
+    
+            if ($tag_from_db) {
+                $jsonArray[] = [
+                    'id' => $tag_from_db->id,
+                    'name' => $tag_from_db->name
+                ];
+            } else {
+                error_log("No DB entry found for tagId: $tagId and type: $storageType");
+            }
+        }
+    
+        $jsonString = json_encode($jsonArray);
+        $storage->storageclass = $jsonString;
         $this->di['db']->store($storage);
-
         return true;
     }
 
@@ -942,7 +974,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get list of tags by input
+     * Get list of tags by type
      * 
      * @return array
      */
@@ -952,9 +984,21 @@ class Admin extends \Api_Abstract
         return $output;
     }
 
-    public function service_add_tags($data)
+    public function service_add_tag($data)
     {
-        $output = $this->getService()->save_tags($data);
+        $output = $this->getService()->save_tag($data);
+        return $output;
+    }
+
+    /**
+     * Get list of tags by storage id
+     * 
+     * @return array
+     */
+    public function service_get_tags_by_storage($data)
+    {
+        $output = $this->getService()->get_tags_by_storage($data);
+        error_log("service_get_tags_by_storage: " . print_r($output, true));
         return $output;
     }
 
@@ -1107,24 +1151,7 @@ class Admin extends \Api_Abstract
         // Fill vm_config_template
         $vm_config_template->name = $data['name'];
         $vm_config_template->state = "draft";
-        /* $vm_config_template->description = $data['description'];
-        $vm_config_template->cores = $data['cpu_cores'];
-        $vm_config_template->memory = $data['vmmemory'];
-        $vm_config_template->balloon = $data['balloon'];
-        // if $data['ballon'] is true, check if $data['ballon_size'] is set, otherwise use $data['memory']
-        if ($data['balloon'] == true) {
-            if (isset($data['balloon_size'])) {
-                $vm_config_template->balloon_size = $data['balloon_size'];
-            } else {
-                $vm_config_template->balloon_size = $data['memory'];
-            }
-        }
-        $vm_config_template->os = $data['os'];
-        $vm_config_template->bios = $data['bios'];
-        $vm_config_template->onboot = $data['onboot'];
-        $vm_config_template->agent = $data['agent'];
-        $vm_config_template->created_at = date('Y-m-d H:i:s');
-        $vm_config_template->updated_at = date('Y-m-d H:i:s'); */
+
         $this->di['db']->store($vm_config_template);
 
 
@@ -1292,6 +1319,38 @@ class Admin extends \Api_Abstract
         $this->di['logger']->info('Delete LXC config Template %s', $id);
         return true;
     }
+
+    /**
+     * Create VM Config Template Storage
+     * 
+     * @return bool
+     */
+    public function vm_config_template_storage_create($data)
+    {
+        $required = array(
+            'template_id'     => 'Template ID is missing',
+            'storage_size'    => 'Storage size is missing',
+            'storage_type_tags'    => 'Storage type is missing',
+            'storage_controller'    => 'Storage controller is missing',
+        );
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+
+        // dispense new vm_config_template_storage
+        $vm_config_template_storage = $this->di['db']->dispense('service_proxmox_vm_storage_template');
+        // Fill vm_config_template_storage
+        $vm_config_template_storage->template_id = $data['template_id'];
+        $vm_config_template_storage->size = $data['storage_size'];
+        $vm_config_template_storage->storage_type = json_encode($data['storage_type_tags']);
+        $vm_config_template_storage->controller = $data['storage_controller'];
+        $vm_config_template_storage->created_at = date('Y-m-d H:i:s');
+        $vm_config_template_storage->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($vm_config_template_storage);
+
+    }
+
+
 
     /**
      * Create ip range

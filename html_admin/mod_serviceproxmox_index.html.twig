@@ -34,6 +34,16 @@
 
     <div class="card">
         <div class="tab-content">
+            <div class="card-header d-flex justify-content-between">
+                <span></span> <!-- Empty for alignment purposes -->
+                <div class="d-flex align-items-center">
+                    <span id="toggle-label" style="padding-right: 10px;">Show help</span>
+                    <label class="switch">
+                        <input type="checkbox" id="slide-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
         <!-- ##############################################################################
                                                 List Servers
              ############################################################################## -->
@@ -43,13 +53,34 @@
                         {{ 'Proxmox Servers' | trans }}
                     </h2>
                 </div>
-                
+                <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                    <div class="help-section d-none" style="padding-left:10px;padding-bottom:10px;">
+                        <div style="padding-left:15px;padding-top:8px;padding-bottom:10px;">
+                            Legend: &nbsp;
+                            <svg class="icon">
+                                <use xlink:href="#wifi" />
+                            </svg>
+                            Test Connection &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <svg class="icon">
+                                <use xlink:href="#arrow-back-up" />
+                            </svg>
+                            Prepare Server &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <svg class="icon">
+                                <use xlink:href="#edit" />
+                            </svg>
+                            Edit Server &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <svg class="icon">
+                                <use xlink:href="#delete" />
+                            </svg>
+                            Delete Server
+                        </div>
+                    </div>
                 {% set servers_grouped = admin.serviceproxmox_server_get_list() %}
                 {% for group in servers_grouped %}
                 <div style="padding: 0.25rem 1.5rem">
                     <strong> {{ group.group }}</strong> group
                 </div>
-                <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                
                     <thead>
                         <tr>
                             <th>
@@ -159,7 +190,10 @@
                 {% endfor %}
                 </table>
             </div>
+
         </div>
+
+ 
         <!-- ##############################################################################
                                                 Add new Server
              ############################################################################## -->
@@ -238,11 +272,15 @@
                             </label>
                             <div class="col">
                                 <input class="form-control" type="password" name="root_password" value="" required>
+                                <div class="help-section help-texts d-none" style="padding-left:15px;padding-top:8px;padding-bottom:10px;">
+                                    <span>This password will only be used to create the access tokens on the pve server.</span>
+                                </div>
                             </div>
+
                         </div>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">
-                                {{ 'Enable/Disable' | trans }}:
+                                {{ 'Enable / Disable' | trans }}:
                             </label>
                             <div class="col">
                                 <div class="form-check form-check-inline">
@@ -434,4 +472,94 @@
             </table>
         </div>
     </div>
+{% endblock %}
+{% block js%}
+<style>
+    /* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 30px; /* Reduced size */
+  height: 17px; /* Reduced size */
+}
+
+  
+  /* Hide default HTML checkbox */
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  /* The slider */
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 13px; /* Reduced size */
+  width: 13px; /* Reduced size */
+  left: 2px; /* Adjusted positioning */
+  bottom: 2px; /* Adjusted positioning */
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
+  
+  input:checked + .slider {
+    background-color: #2196F3;
+  }
+  
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
+  
+  input:checked + .slider:before {
+    -webkit-transform: translateX(13px); /* Adjusted slide distance */
+  -ms-transform: translateX(13px); /* Adjusted slide distance */
+  transform: translateX(13px); /* Adjusted slide distance */
+  }
+  
+  /* Rounded sliders */
+  .slider.round {
+    border-radius: 34px;
+  }
+  
+  .slider.round:before {
+    border-radius: 50%;
+  }
+  .help-texts {
+    color: #206BC4;
+    font-style:italic;
+}
+
+</style>
+
+<script>
+    $(document).ready(function() {
+    $('#slide-toggle').on('change', function() {
+        $('.help-section').toggleClass('d-none');
+
+        if ($('#slide-toggle').prop('checked')) {
+            // Slide toggle is ON
+            $('#toggle-label').text('Hide help');
+        } else {
+            // Slide toggle is OFF
+            $('#toggle-label').text('Show help');
+        }
+    });
+});
+
+
+</script>> 
 {% endblock %}

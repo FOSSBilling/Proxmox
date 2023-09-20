@@ -4,7 +4,21 @@
 	{{ 'Manage Proxmox server' | trans }}
 {% endblock %}
 {% set active_menu = 'system' %}
-
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'serviceproxmox'|alink }}">{{ 'Proxmox Servers'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ server.name }}</li>
+    </ol>
+{% endblock %}
 {% block content %}
 	<div class="card">
 		<div class="card-body">

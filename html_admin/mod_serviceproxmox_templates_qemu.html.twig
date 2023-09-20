@@ -4,13 +4,27 @@
     {{ 'Proxmox Configuration Templates' | trans }}
 {% endblock %}
 {% set active_menu = 'proxmox' %}
-
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'serviceproxmox/templates'|alink }}">{{ 'Proxmox Configuration Templates'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">Template {{vm_config_template.id}}</li>
+    </ol>
+{% endblock %}
 {% block content %}
     <div class="card">
         <div class="card-body">
             <form method="post" action="admin/serviceproxmox/vm_template_update" class="api-form" data-api-redirect="{{ 'serviceproxmox/templates'|alink }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
-                <input type="hidden" name="id" value="{{ vm_config_template.id }}" />
+                <input type="hidden" name="id" id="vm_config_template_id" value="{{ vm_config_template.id }}" />
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">
                         {{ 'Name' | trans }}:    
@@ -156,9 +170,358 @@
                         </div>
                     </div>
                 </div>
-                <input type="submit" value="{{ 'Update VM Template' | trans }}" class="btn btn-primary">
+                <div class="card-body">
+                            <!-- tabs for storage and drives -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" href="#tab-vm-storage" data-bs-toggle="tab">
+                                    {{ 'Storage' | trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation" id='tab-new-vm-storage-btn'>
+                                <a class="nav-link" href="#tab-new-vm-storage" data-bs-toggle="tab" >
+                                    <svg class="icon me-2">
+                                        <use xlink:href="#plus" />
+                                    </svg>
+                                    {{ 'New Storage' | trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" href="#tab-vm-cdrom" data-bs-toggle="tab">
+                                    {{ 'Removable Storage' | trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" href="#tab-new-vm-cdrom" data-bs-toggle="tab">
+                                    <svg class="icon me-2">
+                                        <use xlink:href="#plus" />
+                                    </svg>
+                                    {{ 'New Removable Storage' | trans }}
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tab-vm-storage" role="tabpanel">
+                                <div class="card-body">                                            
+                                    <div class="table-responsive">
+                                        <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
+                                            <thead>
+                                                <th>
+                                                    <td>Storage Type</td>
+                                                    <td>Size (GB)</td>
+                                                    <td>Controller</td>
+                                                    <th class="w-1"></th>
+                                                </th>
+                                            </thead>
+                                            <tbody id='template-storage-list'>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-content">
+                            <div class="tab-pane fade " id="tab-new-vm-storage" role="tabpanel">
+                                <div class="card-body">                                            
+                                <form id='vm-storage-create-form' method="post" action="admin/serviceproxmox/vm_template_update" class="api-form" data-api-redirect="{{ 'serviceproxmox/templates'|alink }}">
+                                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3">Storage Type Tags:</label>
+                                        <div class="col">
+                                            <input type="text" name="storageTypeTags[]" id="storageTypeTags" multiple>
+                                        </div>
+                                    </div>
+                            
+                                
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3 col-form-label">
+                                            {{ 'Size' | trans }}:                                                                    
+                                        </label>
+                                        <div class="col-md-5">
+                                                <input class="form-range" type="range" name="storage_size" value="1" min="50" max="2000" step="10" oninput="storage_sizeOutput.value = this.value+' GB';">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <output name="storage_sizeOutput" for="storage_size">
+                                                50 GB
+                                            </output>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label class="form-label col-3 col-form-label">
+                                            {{ 'Controller' | trans }}:                                                                    
+                                        </label>
+                                        {% set controllers = admin.serviceproxmox_storage_controller_get_list() %}
+                                        <div class="col">
+                                            <select name="controller" class="form-select">
+                                                {% for key, controller in controllers %}
+                                                    <option value="{{ key }}">{{ controller }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <!-- Button to add the new storage to the list -->
+                                    <button type="button" class="btn btn-primary" id='add-storage-btn'>Add Storage</button>
+                                </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                            <a class="btn btn-error" href="{{ '/serviceproxmox/templates/disable'| alink }}/{{ vm_config_template.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#close" />
+                                </svg>
+                                {{ 'Disable' | trans }}&nbsp;&nbsp;
+                            </a>
+                            <a class="btn btn-success" href="{{ '/serviceproxmox/templates/enable'| alink }}/{{ vm_config_template.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#check" />
+                                </svg>
+                                {{ 'Enable' | trans }}&nbsp;&nbsp;
+                            </a>
+                            <input type="submit" value="{{ 'Update VM Template' | trans }}" class="btn btn-primary">
+                    </div>
             </form>
         </div>
     </div>
+
+{% endblock %}
+{% block js %}
+    <script>
+
+        // Add event listener to the add-storage-btn
+        document.getElementById('add-storage-btn').addEventListener('change', function() {
+            // Save the storage configuration
+
+        });
+
+        function saveTemplateAsDraft(template){
+            // get the value of the template name field
+            var template_name = document.getElementById('vm-template-name').value;
+            // create a new vm template via ajax call to the api
+            $.ajax({
+                url: '/index.php?_url=/api/admin/serviceproxmox/vm_config_template_create', // Replace with the actual URL to your server-side endpoint
+                method: 'POST', // or 'GET', depending on your server-side implementation
+                data: { name: template_name, 
+                CSRFToken: "{{ CSRFToken }}"
+                },
+                success: function(response) {
+                    // Add field to the form ('vm-create-form') with vm config template id
+                    var vm_config_template_new = response.result;
+                    // create a new input field with the vm config template id
+                    var input = document.createElement("input");
+                    input.setAttribute("type", "hidden");
+                    input.setAttribute("name", "vm_config_template_id");
+                    input.setAttribute("id", "vm_config_template_id");                    
+                    input.setAttribute("value", vm_config_template_new.id);
+                    document.getElementById("vm-create-form").appendChild(input);
+                    // Modify the form action to the update function
+                    document.getElementById("vm-template-name").setAttribute("value", vm_config_template_new.name);
+                    document.getElementById("vm-create-form").setAttribute("action", "/index.php?_url=/admin/serviceproxmox/vm_config_template_update/" + vm_config_template_new.id);
+                },
+                error: function(response) {
+                    // Handle error
+                    console.log(response);
+                }
+            });
+        };
+
+        function updateStorageTable(){
+            // check if the element with id 'vm_config_template_id' exists
+            var template_id = document.getElementById('vm_config_template_id').value;      
+            console.log('tmplid: '+template_id);
+            // run axaj call to vm_config_template_get_storages with the template id
+            API.admin.post('serviceproxmox/vm_config_template_get_storages', { id: template_id }, (response) => {
+                    console.log(response);
+                    vm_config_template_storage = response
+                    
+                        // create a new row in the table <tbody id='template-storage-list'>
+                        var row = document.createElement("tr");
+                        row.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage[1].id);
+                        document.getElementById("template-storage-list").appendChild(row);
+                        // create a new cell in the row with the storage type
+                        var cell = document.createElement("td");
+                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-name");
+                        cell.innerHTML = vm_config_template_storage[1].storage_type;
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id).appendChild(cell);
+                        // create a new cell in the row with the storage size
+                        var cell = document.createElement("td");
+                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-size");
+                        cell.innerHTML = vm_config_template_storage[1].size+" GB";
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id).appendChild(cell);
+                        // create a new cell in the row with the storage controller
+                        var cell = document.createElement("td");
+                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-controller");
+                        cell.innerHTML = vm_config_template_storage[1].controller;
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id).appendChild(cell);
+                        // create a new cell in the row with actions (edit, delete)
+                        var cell = document.createElement("td");
+                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-actions");
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id).appendChild(cell);
+                        // create a new button in the cell with the edit action
+                        /* Example: 
+                                                        <a class="btn btn-icon" href="{{ '/serviceproxmox/templates/vm_config'|alink }}/{{ template.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                                */
+
+                        var button = document.createElement("a");
+                        button.setAttribute("class", "btn btn-icon");
+                        button.setAttribute("href", "/index.php?_url=/admin/serviceproxmox/vm_config_template_storage_edit/" + vm_config_template_storage[1].id);
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-actions").appendChild(button);
+                        // create a new svg in the button
+                        var svg = document.createElement("svg");
+                        svg.setAttribute("class", "icon");
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-actions").appendChild(svg);
+                        // create a new use in the svg
+                        var use = document.createElement("use");
+                        use.setAttribute("xlink:href", "#edit");
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-actions").appendChild(use);
+                        // create a new button in the cell with the delete action
+                        var button = document.createElement("a");
+                        button.setAttribute("class", "btn btn-icon");
+                        button.setAttribute("href", "/index.php?_url=/admin/serviceproxmox/vm_config_template_storage_delete/" + vm_config_template_storage[1].id);
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-actions").appendChild(button);
+                        // create a new svg in the button
+                        var svg = document.createElement("svg");
+                        svg.setAttribute("class", "icon");
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-actions").appendChild(svg);
+                        // create a new use in the svg
+                        var use = document.createElement("use");
+                        use.setAttribute("xlink:href", "#delete");
+                        document.getElementById("template-storage-list-row-" + vm_config_template_storage[1].id + "-storage-actions").appendChild(use);
+
+                },
+                error => {
+                    // Handle error
+                    console.log(response);
+                }
+            )};
+
+{#         $(document).ready(function() {
+            var options=[];	
+            $.ajax({
+                url: '/index.php?_url=/api/admin/serviceproxmox/service_get_tags',
+                method: 'POST', 
+                data: {
+                    type: "storage",
+                    CSRFToken: '{{ CSRFToken }}'
+                },
+                success: function(response) {
+                    // populate the select with the tags
+                    console.log(response.result);
+                    for (var key in response.result) {
+                        if (response.hasOwnProperty(key)) {
+                            console.log(response.result[key].name);
+                            var option = {
+                                value: response.result[key].id,
+                                text: response.result[key].name
+                            };
+                            options.push(option);
+                            console.log(options);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Handle the error response
+                    console.log('Error occurred while saving tags: ' + error);
+                }
+            });
+            var storageselect = new TomSelect('#storageTypeTags', {
+                plugins: ['remove_button'],
+                create: true,
+                delimiter: ',',
+                options: options
+            })
+
+
+        }) #}
+        $(document).ready(function() {
+            var Type = "storage";
+            var select = new TomSelect('#storageTypeTags', {
+                plugins: ['remove_button'],
+                create: true,
+                delimiter: ',',
+                // Add more options and settings as needed
+            });
+
+            getTagsForType(Type, function(options) {
+                // Add options to the TomSelect instance
+                select.addOption(options);
+            });
+            updateStorageTable();
+        });
+        function getTagsForType(Type, callback) {
+            // Create the AJAX request
+            var options = [];
+            $.ajax({
+                url: '/index.php?_url=/api/admin/serviceproxmox/service_get_tags',
+                method: 'POST',
+                data: {
+                    type: Type,
+                    CSRFToken: '{{ CSRFToken }}'
+                },
+                success: function(response) {
+                    for (var key in response.result) {
+                        if (response.result.hasOwnProperty(key)) {
+                            var option = {
+                                value: response.result[key].id,
+                                text: response.result[key].name
+                            };
+                            options.push(option);
+                        }
+                    }
+                    // Call the callback function with the options array
+                    callback(options);
+                },
+                error: function(xhr, status, error) {
+                    // Handle the error response
+                    console.log('Error occurred while saving tags: ' + error);
+                    // Call the callback function with an empty array
+                    callback(options);
+                }
+            });
+        }
+{#         function getTagsForType(Type) {
+            // Create the AJAX request
+            
+        } #}
+        // add an event listener to the Add storage tab button
+{#         var tabNewVmStorageBtn = document.getElementById('tab-new-vm-storage-btn');
+        tabNewVmStorageBtn.addEventListener('click', function(event) {
+            // run the getTagsForType function with the type "storage"
+            getTagsForType("storage");
+        }); #}
+                function saveTagsToDatabase() {
+            // Retrieve the selected tags
+            var selectedTags = $('#storageTypeTags[]').val();
+        
+            // Create the AJAX request
+            $.ajax({
+                url: '/your-endpoint-url', // Replace with the actual URL for your backend endpoint
+                method: 'POST', // or 'GET', depending on your backend implementation
+                data: {
+                    tags: selectedTags
+                },
+                success: function(response) {
+                    // Handle the success response
+                    console.log('Tags saved successfully!');
+                },
+                error: function(xhr, status, error) {
+                    // Handle the error response
+                    console.log('Error occurred while saving tags: ' + error);
+                }
+            });
+        }
+
+
+        
+
+
+    </script>
 
 {% endblock %}

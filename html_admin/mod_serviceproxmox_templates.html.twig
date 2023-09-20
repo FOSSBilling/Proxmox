@@ -4,7 +4,18 @@
     {{ 'Proxmox Configuration Templates' | trans }}
 {% endblock %}
 {% set active_menu = 'proxmox' %}
-
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">Proxmox Configuration Templates</li>
+    </ol>
+{% endblock %}
 {% block content %}
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
@@ -354,7 +365,7 @@
                                             {{ 'Size' | trans }}:                                                                    
                                         </label>
                                         <div class="col-md-5">
-                                                <input class="form-range" type="range" name="storage_size" value="1" min="50" max="2000" step="10" oninput="storage_sizeOutput.value = this.value+' GB';">
+                                                <input class="form-range" type="range" name="storage_size" id="storage_size" value="1" min="50" max="2000" step="10" oninput="storage_sizeOutput.value = this.value+' GB';">
                                         </div>
                                         <div class="col-md-2">
                                             <output name="storage_sizeOutput" for="storage_size">
@@ -368,7 +379,7 @@
                                         </label>
                                         {% set controllers = admin.serviceproxmox_storage_controller_get_list() %}
                                         <div class="col">
-                                            <select name="controller" class="form-select">
+                                            <select name="controller" id="controller" class="form-select">
                                                 {% for key, controller in controllers %}
                                                     <option value="{{ key }}">{{ controller }}</option>
                                                 {% endfor %}
@@ -377,7 +388,8 @@
                                     </div>
                                 </div>
                                 <div class="card-footer">
-
+                                    <!-- Button to add the new storage to the list -->
+                                    <button type="button" class="btn btn-primary" id='add-storage-btn'>Add Storage</button>
                                 </div>
                                 </form>
                             </div>
@@ -702,6 +714,7 @@
     </div>
 {% endblock %}
 {% block js %}
+    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
     <script>
         // hide the div 'balloon-size' if the the select 'balloon-yes' is checked
         var balloonyes = document.getElementById('radioBalloonYes');
@@ -735,19 +748,49 @@
             }
         });
 
+        document.getElementById('add-storage-btn').addEventListener('click', function() {
+            // Save the storage configuration
+            saveStorage();
+        });
+
+        // function to save storage configuration
+        function saveStorage(){
+
+            //prepare the data for the ajax call: template id in the hidden input with id vm_config_template_id
+            var template_id_v = document.getElementById('vm_config_template_id');
+            console.log('templ.id '+template_id_v.value);
+            // storage size from the input with name=storage_size, not id
+            var storage_size_v = document.getElementById('storage_size');
+            //storage controller from the select named controller 
+            var storage_controller_v = document.getElementById('controller');
+            // storage type tags from the input with id storageTypeTags
+            var storage_type_tags_v = document.getElementById('storageTypeTags');
+
+            // Build the data for the API call
+            var data = { template_id: template_id_v.value, storage_size: storage_size_v.value, storage_controller: storage_controller_v.value, storage_type_tags: storage_type_tags_v.value };
+            // Call the API
+
+            API.admin.post('serviceproxmox/vm_config_template_storage_create', data , (response) => {
+                updateStorageTable()
+            }, (response) => {
+                // Handle error
+                console.log(response);
+            });
+
+
+            
+        }
+            
+
+
         function saveTemplateAsDraft(template){
             // get the value of the template name field
             var template_name = document.getElementById('vm-template-name').value;
             // create a new vm template via ajax call to the api
-            $.ajax({
-                url: '/index.php?_url=/api/admin/serviceproxmox/vm_config_template_create', // Replace with the actual URL to your server-side endpoint
-                method: 'POST', // or 'GET', depending on your server-side implementation
-                data: { name: template_name, 
-                CSRFToken: "{{ CSRFToken }}"
-                },
-                success: function(response) {
+            API.admin.post('serviceproxmox/vm_config_template_create', { name: template_name }, (response) => {
                     // Add field to the form ('vm-create-form') with vm config template id
-                    var vm_config_template_new = response.result;
+                    var vm_config_template_new = response;
+                    console.log(vm_config_template_new);
                     // create a new input field with the vm config template id
                     var input = document.createElement("input");
                     input.setAttribute("type", "hidden");
@@ -756,14 +799,14 @@
                     input.setAttribute("value", vm_config_template_new.id);
                     document.getElementById("vm-create-form").appendChild(input);
                     // Modify the form action to the update function
+                    document.getElementById("vm-template-name").setAttribute("value", vm_config_template_new.name);
                     document.getElementById("vm-create-form").setAttribute("action", "/index.php?_url=/admin/serviceproxmox/vm_config_template_update/" + vm_config_template_new.id);
                 },
-                error: function(response) {
+                error => {
                     // Handle error
                     console.log(response);
                 }
-            });
-        };
+            )};
 
         function updateStorageTable(){
             // check if the element with id 'vm_config_template_id' exists
@@ -772,6 +815,7 @@
                 var template_id = document.getElementById('vm_config_template_id').value;      
             }
             // run axaj call to vm_config_template_get_storages with the template id
+            console.log('template id: '+template_id);
             $.ajax({
                 url: '/index.php?_url=/api/admin/serviceproxmox/vm_config_template_get_storages', // Replace with the actual URL to your server-side endpoint
                 method: 'POST', // or 'GET', depending on your server-side implementation
@@ -896,6 +940,8 @@
                 // Add options to the TomSelect instance
                 select.addOption(options);
             });
+
+            updateStorageTable();
         });
         function getTagsForType(Type, callback) {
             // Create the AJAX request

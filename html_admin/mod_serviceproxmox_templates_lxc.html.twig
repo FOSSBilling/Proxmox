@@ -4,7 +4,21 @@
     {{ 'Proxmox Configuration Templates' | trans }}
 {% endblock %}
 {% set active_menu = 'proxmox' %}
-
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'serviceproxmox/templates'|alink }}">{{ 'Proxmox Configuration Templates'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">LXC Container {{lxc_config_template.id}}</li>
+    </ol>
+{% endblock %}
 {% block content %}
     <div class="card">
     <!-- ##############################################################################
