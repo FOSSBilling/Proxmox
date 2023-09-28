@@ -134,6 +134,7 @@ trait ProxmoxServer
 		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue);
 
 		if ($proxmox->login()) {
+			error_log("ProxmoxServer.php: getHardwareData: Login successful");
 			$hardware = $proxmox->get("/nodes/" . $server->name . "/status");
 			return $hardware;
 		} else {

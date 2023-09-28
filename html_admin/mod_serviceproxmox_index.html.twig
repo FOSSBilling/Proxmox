@@ -54,27 +54,27 @@
                     </h2>
                 </div>
                 <table class="table card-table table-vcenter table-striped table-responsive text-nowrap">
-                    <div class="help-section d-none" style="padding-left:10px;padding-bottom:10px;">
-                        <div style="padding-left:15px;padding-top:8px;padding-bottom:10px;">
-                            Legend: &nbsp;
-                            <svg class="icon">
-                                <use xlink:href="#wifi" />
-                            </svg>
-                            Test Connection &nbsp;&nbsp;|&nbsp;&nbsp;
-                            <svg class="icon">
-                                <use xlink:href="#arrow-back-up" />
-                            </svg>
-                            Prepare Server &nbsp;&nbsp;|&nbsp;&nbsp;
-                            <svg class="icon">
-                                <use xlink:href="#edit" />
-                            </svg>
-                            Edit Server &nbsp;&nbsp;|&nbsp;&nbsp;
-                            <svg class="icon">
-                                <use xlink:href="#delete" />
-                            </svg>
-                            Delete Server
-                        </div>
-                    </div>
+                <div class="help-section d-none" style="padding-left:10px;padding-bottom:10px;">
+                <div style="padding-left:15px;padding-top:8px;padding-bottom:10px;">
+                    Legend: &nbsp;
+                    <svg class="icon">
+                        <use xlink:href="#wifi" />
+                    </svg>
+                    Test Connection &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <svg class="icon">
+                        <use xlink:href="#arrow-back-up" />
+                    </svg>
+                    Prepare Server &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <svg class="icon">
+                        <use xlink:href="#edit" />
+                    </svg>
+                    Edit Server &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <svg class="icon">
+                        <use xlink:href="#delete" />
+                    </svg>
+                    Delete Server
+                </div>
+            </div>
                 {% set servers_grouped = admin.serviceproxmox_server_get_list() %}
                 {% for group in servers_grouped %}
                 <div style="padding: 0.25rem 1.5rem">

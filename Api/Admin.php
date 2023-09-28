@@ -418,7 +418,6 @@ class Admin extends \Api_Abstract
         $server->realm              = $data['realm'];
         $server->root_user          = $data['root_user'];
         $server->root_password      = $data['root_password'];
-        $server->config             = $data['config'];
         $server->active             = $data['active'];
         $server->created_at         = date('Y-m-d H:i:s');
         $server->updated_at         = date('Y-m-d H:i:s');
@@ -634,25 +633,29 @@ class Admin extends \Api_Abstract
         }
         $this->di['db']->store($server);
         $qemu_templates = $service->getQemuTemplates($server);
+        error_log('qemu_templates: ' . print_r($qemu_templates, true));
         foreach ($qemu_templates as $key => $value) {
-            if ($value['template'] == 1) {
-                $sql = "SELECT * FROM `service_proxmox_qemu_template` WHERE server_id = " . $server_id . " AND vmid = " . $value['vmid'];
-                $template = $this->di['db']->getAll($sql);
+            // check if $value['template'] exists, and if it's content is 1
+            if (!empty($value['template'])) {
+                if ($value['template'] == 1) {
+                    $sql = "SELECT * FROM `service_proxmox_qemu_template` WHERE server_id = " . $server_id . " AND vmid = " . $value['vmid'];
+                    $template = $this->di['db']->getAll($sql);
 
-                // if the template exists, update it, otherwise create it
-                if (!empty($template)) {
-                    $template = $this->di['db']->findOne('service_proxmox_qemu_template', 'server_id=:server_id AND vmid=:vmid', array(':server_id' => $server_id, ':vmid' => $value['vmid']));
-                } else {
-                    $template = $this->di['db']->dispense('service_proxmox_qemu_template');
+                    // if the template exists, update it, otherwise create it
+                    if (!empty($template)) {
+                        $template = $this->di['db']->findOne('service_proxmox_qemu_template', 'server_id=:server_id AND vmid=:vmid', array(':server_id' => $server_id, ':vmid' => $value['vmid']));
+                    } else {
+                        $template = $this->di['db']->dispense('service_proxmox_qemu_template');
+                    }
+                    $template->vmid = $value['vmid'];
+                    $template->server_id = $server_id;
+                    $template->name = $value['name'];
+                    $template->created_at = date('Y-m-d H:i:s');
+                    $template->updated_at = date('Y-m-d H:i:s');
+
+                    $stored = $this->di['db']->store($template);
+                    error_log('template saved: ' . print_r($stored, true));
                 }
-                $template->vmid = $value['vmid'];
-                $template->server_id = $server_id;
-                $template->name = $value['name'];
-                $template->created_at = date('Y-m-d H:i:s', $value['ctime']);
-                $template->updated_at = date('Y-m-d H:i:s', $value['ctime']);
-
-                $stored = $this->di['db']->store($template);
-                error_log('template saved: ' . print_r($stored, true));
             }
         }
 
@@ -1060,9 +1063,15 @@ class Admin extends \Api_Abstract
 
     public function vm_config_template_get_storages($data)
     {
-        error_log("vm_config_template_get_storages: " . print_r($data, true));
+        error_log("Get list of storages for VM Template: " . print_r($data, true));
         $vm_config_template = $this->di['db']->find('service_proxmox_vm_storage_template', 'template_id=:id', array(':id' => $data['id']));
-
+        //replace the storage_type with the name of the tag
+        foreach ($vm_config_template as $key => $value) {
+            $storage_tag_id = json_decode($value->storage_type);
+            error_log("storage_tag_id: " . print_r($storage_tag_id, true));
+            $tag = $this->di['db']->findOne('service_proxmox_tag', 'id=:id', array(':id' => $storage_tag_id));
+            $vm_config_template[$key]->storage_type = $tag->name;
+        }
         return $vm_config_template;
     }
 
@@ -1199,7 +1208,7 @@ class Admin extends \Api_Abstract
         );
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
+        error_log("vm_template_update: " . print_r($data, true));
         // Retrieve associated vm_config_template
         $vm_config_template  = $this->di['db']->findOne('service_proxmox_vm_config_template', 'id=:id', array(':id' => $data['id']));
 

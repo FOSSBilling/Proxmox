@@ -877,44 +877,7 @@
                 }
             });
             }
-{#         $(document).ready(function() {
-            var options=[];	
-            $.ajax({
-                url: '/index.php?_url=/api/admin/serviceproxmox/service_get_tags',
-                method: 'POST', 
-                data: {
-                    type: "storage",
-                    CSRFToken: '{{ CSRFToken }}'
-                },
-                success: function(response) {
-                    // populate the select with the tags
-                    console.log(response.result);
-                    for (var key in response.result) {
-                        if (response.hasOwnProperty(key)) {
-                            console.log(response.result[key].name);
-                            var option = {
-                                value: response.result[key].id,
-                                text: response.result[key].name
-                            };
-                            options.push(option);
-                            console.log(options);
-                        }
-                    }
-                },
-                error: function(xhr, status, error) {
-                    // Handle the error response
-                    console.log('Error occurred while saving tags: ' + error);
-                }
-            });
-            var storageselect = new TomSelect('#storageTypeTags', {
-                plugins: ['remove_button'],
-                create: true,
-                delimiter: ',',
-                options: options
-            })
 
-
-        }) #}
         $(document).ready(function() {
             var Type = "storage";
             var select = new TomSelect('#storageTypeTags', {
