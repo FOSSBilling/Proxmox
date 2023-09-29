@@ -1,0 +1,194 @@
+{% import 'macro_functions.html.twig' as mf %}
+{% extends "layout_default.html.twig" %}
+{% block meta_title %}
+   {{ 'Manage Proxmox storage' | trans }}
+{% endblock %}
+{% set active_menu = 'system' %}
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'serviceproxmox'|alink }}">{{ 'Proxmox Servers'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ storage.storage }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+         <div class="card">
+         <div class="card-body">
+             <h3>Manage Storage "{{ storage.storage }}"</h3>
+         </div>
+         <div class="row mb-3">
+                 <div class="col-md-6">
+                     <!-- Progress bar section -->
+                     <div class="col-md-8" style="padding-left: 20px;">
+                         <div class="progress" style="height: 20px;">
+                             {% set usage_percent = (storage.used / storage.size * 100) | round(2) %}
+                             {% if usage_percent < 50 %}
+                                 {% set bar_color = "bg-success" %}
+                             {% elseif usage_percent < 80 %}
+                                 {% set bar_color = "bg-warning" %}
+                             {% else %}
+                                 {% set bar_color = "bg-danger" %}
+                             {% endif %}
+                             <div class="progress-bar {{ bar_color }} d-flex align-items-center justify-content-center" role="progressbar" style="width: {{ usage_percent }}%; font-weight: bold; font-size: 1rem;" aria-valuenow="{{ usage_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                 {{ usage_percent }}%
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+               </div>
+         <div class="card-body">
+         
+         <!-- Additional Storage Details using a Table -->
+         <table class="table table-borderless mb-3">
+            <tbody>
+                  <tr>
+                     <th scope="row" style="width: 25%;">{{"Storage Name" | trans}}:</th>
+                     <td>{{ storage.storage }}</td>
+                     </tr>
+                     <tr>
+                     <th scope="row" style="width: 25%;">{{"Server" | trans}}:</th>
+                     <td>{{ storage.server_name }}</td>
+                  </tr>
+                  <tr>
+                     <th scope="row" style="width: 25%;">{{"Storage Type" | trans}}:</th>
+                     <td>{{ storage.type }}</td>
+                  </tr>
+                  <tr>
+                     <th scope="row" style="width: 25%;">{{"Content" | trans}}:</th>
+                     <td>{{ storage.content }}</td>
+                  </tr>
+                  <tr>
+                  <th scope="row" style="width: 25%;">{{"Usage" | trans}}:</th>
+                  <td>{{ storage.used }} / {{ storage.size }} GB</td>
+               </tr>
+                  
+            </tbody>
+         </table>
+             
+             <!-- Progress bar for Storage Usage and its details -->
+               
+         <form method="post" action="admin/serviceproxmox/storage_update" id="storage-update" class="api-form" data-api-msg="storage updated">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+            <input type="hidden" name="storageid" value="{{ storage.id }}" />
+            <input type="hidden" name="storagetype" value="storage" />
+            <div class="row mb-3">
+               <label class="col-md-3 col-form-label">
+                  Storage Classes
+                                 
+               </label>
+               <div class="col-md-6">
+                     <div class="col">
+                     <input type="text" name="storageTypeTags[]" id="storageTypeTags" multiple>
+                  </div>
+               </div>
+            </div>
+            <!-- select Storageclass -->
+
+            <input type="submit" value="{{ 'Update storage' | trans }}" class="btn btn-primary"></form>
+         </div>
+      </div>
+   {% endblock %}
+   {% block js %}
+   <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
+   <script>
+      $(document).ready(function() {
+         var Type = "storage";
+         var select = new TomSelect('#storageTypeTags', {
+             plugins: ['remove_button', 'input_autogrow'],
+             create: function (input, callback) {
+               // Send the new tag to the server to save it
+               saveTagToDatabase(input, function (responseTag) {
+                     // Callback with the saved tag to add it to the dropdown
+                     callback({ value: responseTag.name, text: responseTag.name });
+               });
+            },
+             delimiter: ',',
+             // Add more options and settings as needed
+         });
+
+         getTagsForType(Type, function(options) {
+             // Add options to the TomSelect instance
+             select.addOption(options);
+         });
+
+         getTagsForStorage(function(options) {
+            // Convert the data to a format suitable for TomSelect
+            var formattedOptions = options.map(option => {
+                return { value: option.id, text: option.name };
+            });
+        
+            // Add each option to the TomSelect instance
+            select.addOption(formattedOptions);
+            
+            // Add items to the TomSelect instance
+            options.forEach(option => {
+                select.addItem(option.id);
+            });
+        });
+            
+            
+         });
+
+     function getTagsForType(Type, callback) {
+         // Create the AJAX request
+         var options = [];
+         API.admin.post("serviceproxmox/service_get_tags", {type: Type}, function(response) {
+            for (var key in response) {
+               if (response.hasOwnProperty(key)) {
+                   var option = {
+                       value: response[key].id,
+                       text: response[key].name
+                   };
+                   options.push(option);
+               }
+           }
+           // Call the callback function with the options array
+           callback(options);
+          }, function(error) {
+                 // Handle the error response
+                 console.log('Error occurred while getting tags: ' + error);
+                 // Call the callback function with an empty array
+                 callback(options);
+          }, false);
+     }
+
+   // function to get tags for this storage and add them to the select as selected
+      function getTagsForStorage(callback) {
+         // Create the AJAX request
+         const storage_id = $('input[name="storageid"]').val();
+         API.admin.post('serviceproxmox/service_get_tags_by_storage', { storageid: storage_id }, (response) => {
+            // Convert the JSON string response to an array of objects
+            callback(response);
+         }, (error) => {
+            // Handle the error response
+            console.log(`Error occurred while getting tags: ${error}`);
+            // Call the callback function with an empty array
+            callback([]);
+         }, false);
+   }
+    
+      function saveTagToDatabase(tag, callback) {
+         var Type = "storage";
+         API.admin.post("serviceproxmox/service_add_tag", { type: Type, tag: tag }, function (response) {
+             console.log('Tag saved successfully:', response.tag);
+             if (callback) {
+                 callback(response.tag);
+             }
+         }, function (error) {
+             console.log('Error occurred while saving tag: ' + error);
+         }, false);
+     }
+
+   </script>
+
+
+{% endblock %}
+   

@@ -1,0 +1,7 @@
+parameters:
+    level: 0
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false
+    scanDirectories:
+        - ../../

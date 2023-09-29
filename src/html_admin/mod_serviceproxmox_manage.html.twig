@@ -1,0 +1,135 @@
+{% set server = admin.serviceproxmox_server_get_from_order({"order_id":order.id}) %}
+
+<div class="card-body">
+    <h2>
+        {{ 'Details' | trans }}
+    </h2>
+</div>
+<table class="table card-table table-striped">
+    <tbody>
+        <tr>
+            <td>
+                {{ 'Status' | trans }}:
+            </td>
+            <td>
+                {{ mf.status_name(order.status) }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                {{ 'Server Name' | trans }}:                            
+            </td>
+            <td>
+                <a href="{{ 'serviceproxmox/server'|alink }}/{{ server.id }}">
+                    {{ server.name }}
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                {{ 'Server Group' | trans }}:
+            </td>
+            <td>
+                <a href="{{ 'serviceproxmox/server'|alink }}/{{ server.id }}">
+                    {{ server.group }}
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                {{ 'Server IPv4' | trans }}:
+            </td>
+            <td>
+                {{ server.ipv4 }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                {{ 'Server IPv6' | trans }}:
+            </td>
+            <td>
+                {{ server.ipv6 }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                {{ 'Server Hostname' | trans }}:
+            </td>
+            <td>
+                {{ server.hostname }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                {{ 'Server root user' | trans }}:
+            </td>
+            <td>
+                {{ server.root_user }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                {{ 'Server root password' | trans }}:
+            </td>
+            <td>
+                {{ server.root_password }}
+            </td>
+        </tr>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2">
+                <div class="aligncenter">
+                    {{ order_actions }}
+                    <a class="btn btn-primary" href="https://{{ server.access }}:8006" target="_blank">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#server" />
+                        </svg>
+                        <span>
+                            {{ 'Jump to control panel'|trans }}
+                        </span>
+                    </a>
+                    <!-- TODO: Add functionality to recreate users' permissions -->
+                    <a class="btn btn-primary api-link" href="{{ 'api/admin/serviceproxmox/sync'|link({'order_id' : order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-msg="{{ 'Account was synced'|trans }}">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#refresh" />
+                        </svg>
+                        <span>
+                            {{ 'Sync with server'|trans }}
+                        </span>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<div class="card-body">
+    <h3>
+        {{ 'Change account password'|trans }}
+    </h3>
+    <form action="{{ 'api/admin/serviceproxmox/change_password'|link }}" method="post" class="api-form" data-api-msg="{{ 'Account password changed'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">
+                {{ 'Password'|trans }}
+                :
+                            
+            </label>
+            <div class="col">
+                <input class="form-control" type="password" name="password" required></div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'Password Confirm'|trans }}
+                    :
+                                    
+                </label>
+                <div class="col">
+                    <input class="form-control" type="password" name="password_confirm" required></div>
+                </div>
+
+                <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <input type="submit" value="{{ 'Change'|trans }}" class="btn btn-primary w-100"></form>
+                </div>
+                

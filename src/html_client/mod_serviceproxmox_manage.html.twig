@@ -1,0 +1,45 @@
+{% block js %}
+   {#  {{ '/serviceproxmox/novnc/app.js' | script_tag }} #}
+
+    {{ '/serviceproxmox/novnc/app/styles/input.css' | stylesheet_tag }}
+    {{ '/serviceproxmox/novnc/app/styles/pve.css' | stylesheet_tag }}
+    {{ '/serviceproxmox/novnc/app/error-handler.js' | script_tag }}
+{% endblock %}
+{% if order.status == 'active' %}
+    {% set vm = client.serviceproxmox_vm_get({"order_id":order.id}) %}
+    {% set server = client.serviceproxmox_server_get({"order_id":order.id}) %}
+    <!-- get proxmox_service -->
+    {% set proxmox_service = client.serviceproxmox_get_proxmox_service({"order_id":order.id}) %}
+    <!-- get websocket infos from vm_cli -->
+
+    <p class="text-center">
+        Status: 
+                
+        {{ server.status }}
+
+        <div class="control-group controls-row text-center">
+            <a class="btn btn-success api-link" href="{{ 'api/client/serviceproxmox/vm_manage'|link({'order_id' : order.id, 'method' : 'start', 'CSRFToken': CSRFToken}) }}" data-api-confirm="{{ 'Are you sure?' | trans }}" data-api-msg="{{ 'VM starting. Reload page after a few moments.' | trans }}">
+                {{ 'Start VM' | trans }}
+            </a>
+            <a class="btn btn-danger api-link" href="{{ 'api/client/serviceproxmox/vm_manage'|link({'order_id' : order.id, 'method' : 'shutdown', 'CSRFToken': CSRFToken}) }}" data-api-confirm="{{ 'Are you sure?' | trans }}" data-api-msg="{{ 'VM shutting down. Reload page after a few moments.' | trans }}">
+                {{ 'Shutdown VM' | trans }}
+            </a>
+            <a class="btn btn-warning api-link" href="{{ 'api/client/serviceproxmox/vm_manage'|link({'order_id' : order.id, 'method' : 'reboot', 'CSRFToken': CSRFToken}) }}" data-api-confirm="{{ 'Are you sure?' | trans }}" data-api-msg="{{ 'VM rebooting. Reload page after a few moments.' | trans }}">
+                {{ 'Reboot VM' | trans }}
+            </a>
+        </div>
+
+        <h2>
+            {{ 'Console' | trans }}
+        </h2>
+        1
+                
+        {% if server.status == "running" %}
+            <!-- TODO: implement vnc console -->
+                {% else %}
+                {{ 'The server needs to be running' | trans }}
+            {% endif %}
+        </p>
+
+    {% endif %}
+    

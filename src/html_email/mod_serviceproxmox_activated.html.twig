@@ -1,0 +1,27 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ order.title }} Activated{% endblock %}
+{% block content %}
+{% apply markdown %}
+
+Hello {{ c.first_name }} {{ c.last_name }},
+
+Your order **{{ order.title }}** is now active.
+
+Here are the details you can use to log in:
+----------------
+
+Address of your VM: {{ ip }}
+
+Username: {{ username }}
+
+Password: {{ password }}
+
+
+Until you receive your VM IP address, you can already access it using the online console available at {{'login'|link({'email' : c.email }) }}
+
+
+Your client area: {{'login'|link({'email' : c.email }) }}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

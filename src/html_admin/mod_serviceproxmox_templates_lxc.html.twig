@@ -1,0 +1,125 @@
+{% import 'macro_functions.html.twig' as mf %}
+{% extends 'layout_default.html.twig' %}
+{% block meta_title %}
+    {{ 'Proxmox Configuration Templates' | trans }}
+{% endblock %}
+{% set active_menu = 'proxmox' %}
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'serviceproxmox/templates'|alink }}">{{ 'Proxmox Configuration Templates'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">LXC Container {{lxc_config_template.id}}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="card">
+    <!-- ##############################################################################
+                                Create new LXC Template
+        ############################################################################## -->
+        {% set lxc_appliances = admin.serviceproxmox_lxc_appliance_get_list() %}
+        <div class="card-body">
+            <form method="post" action="admin/serviceproxmox/lxc_template_update" class="api-form" data-api-redirect="{{ 'serviceproxmox/templates'|alink }}">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
+            <input type="hidden" name="id" value="{{ lxc_config_template.id }}" />
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'Name' | trans }}:    
+                </label>
+                <div class="col">
+                    <input class="form-control" type="text" name="name" value="{{ lxc_config_template.name }}" required placeholder="{{ 'Unique name to identify this LXC template' | trans }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'Description' | trans }}:
+                </label>
+                <div class="col">
+                    <input class="form-control" type="text-area" name="description" value="{{ lxc_config_template.description }}" required placeholder="{{ 'Description' | trans }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'CPU Cores' | trans }}:                                                                    
+                </label>
+                <div class="col-md-5">
+                        <input class="form-range" type="range" name="cpu_cores" value="{{ lxc_config_template.cpu_cores }}" min="1" max="128" step="1" oninput="cpuOutput.value = this.value+' Core(s)';">
+                </div>
+                <div class="col-md-2">
+                    <output name="cpuOutput" for="cpu_cores">
+                        1 Core(s)
+                    </output>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'Memory' | trans }}:                                                                    
+                </label>
+                <div class="col-md-5">
+                        <input class="form-range" type="range" name="memory" value="{{ lxc_config_template.memory }}" min="1" max="128" step="1" oninput="memoryOutput.value = this.value+' GB';">
+                </div>
+                <div class="col-md-2">
+                    <output name="memoryOutput" for="memory">
+                        1 GB
+                    </output>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'Swap Memory Size' | trans }}:                                                                                    
+                </label>
+                <div class="col-md-5">
+                        <input class="form-range" type="range" name="swap" value="{{ lxc_config_template.swap }}" min="1" max="16384" step="1" oninput="swapOutput.value = this.value+' MB';">
+                </div>
+                <div class="col-md-2">
+                    <output name="swapOutput" for="swap">
+                        1 GB
+                    </output>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'OS Template' | trans }}:
+                </label>
+                <div class="col">
+                    <select class="form-select" name="ostemplate">
+                        {% for lxc_appliance in lxc_appliances %}
+                        <option value="{{ lxc_appliance.id }}" {% if lxc_appliance.id == lxc_config_template.template_id %}selected{% endif %}>{{ lxc_appliance.headline }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">
+                    {{ 'Start on boot' | trans }}:
+                </label>
+                <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioOnbootYes" type="radio" name="onboot" value="1" {% if lxc_config_template.onboot == 1 %}checked{% endif %}>
+                    <label class="form-check-label" for="radioOnbootYes">
+                        {{ 'Yes' | trans }}
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioOnbootNo" type="radio" name="onboot" value="0" {% if lxc_config_template.onboot == 0 %}checked{% endif %}>
+                    <label class="form-check-label" for="radioOnbootNo">
+                        {{ 'No' | trans }}
+                    </label>
+                </div>
+            </div>
+            <input type="submit" value="{{ 'Update LXC Template' | trans }}" class="btn btn-primary">
+            </form>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    </div>
+{% endblock %}

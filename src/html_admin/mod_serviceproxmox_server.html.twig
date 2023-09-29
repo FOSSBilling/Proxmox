@@ -1,0 +1,152 @@
+{% import 'macro_functions.html.twig' as mf %}
+{% extends "layout_default.html.twig" %}
+{% block meta_title %}
+	{{ 'Manage Proxmox server' | trans }}
+{% endblock %}
+{% set active_menu = 'system' %}
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'serviceproxmox'|alink }}">{{ 'Proxmox Servers'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ server.name }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+	<div class="card">
+		<div class="card-body">
+			<h5>
+				{{ 'Manage Proxmox server' | trans }}
+			</h5>
+		</div>
+		<div class="card-body">
+			<form method="post" action="admin/serviceproxmox/server_update" id="server-update" class="api-form" data-api-msg="Server updated">
+				<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+				<input type="hidden" name="server_id" value="{{ server.id }}"/>
+
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Name' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="name" value="{{ server.name }}" required placeholder="{{ 'Unique name to identify this server' | trans }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Group' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="group" value="{{ server.group }}" required placeholder="{{ 'Server group' | trans }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Hostname' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="hostname" value="{{ server.hostname }}" required placeholder="{{ 'server1.yourserverdomain.com' | trans }}"></div>
+				</div>
+            <div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Port' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="port" value="{{ server.port }}" required placeholder="{{ '8006' | trans }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'IPv4 address' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="ipv4" value="{{ server.ipv4 }}" required placeholder="{{ 'Primary IPv4 address of the server' | trans }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'IPv6 address' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="ipv6" value="{{ server.ipv6 }}" placeholder="{{ 'Primary IPv6 address of the server' | trans }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Proxmox user realm' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="realm" value="{{ server.realm }}" required placeholder="pam"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Root user' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="root_user" value="{{ server.root_user }}" required placeholder="{{ 'Root username' | trans }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Root password' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="password" name="root_password" value="{{ server.root_password }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'API Token name' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="tokenname" value="{{ server.tokenname }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'API Token Secret' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="tokenvalue" placeholder="{{ server.tokenvalue }}" enabled="false"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Extra configuration' | trans }}:
+					</label>
+					<div class="col">
+						<input class="form-control" type="text" name="config" value="{{ server.config }}"></div>
+				</div>
+				<div class="mb-3 row">
+					<label class="form-label col-3 col-form-label">
+						{{ 'Enable/Disable' | trans }}:
+					</label>
+					<div class="col">
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1" {% if server.active %} checked="checked" {% endif %}>
+							<label class="form-check-label" for="radioActiveYes">
+								{{ 'Yes' | trans }}
+							</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0" {% if not server.active %} checked="checked" {% endif %}>
+							<label class="form-check-label" for="radioActiveNo">
+								{{ 'No' | trans }}
+							</label>
+						</div>
+					</div>
+				</div>
+
+				<input type="submit" value="{{ 'Update server' | trans }}" class="btn btn-primary">
+
+				<a class="btn btn-primary api-link" href="{{ 'api/admin/serviceproxmox/server_test_connection'|link({ 'id': server.id, 'CSRFToken': CSRFToken }) }}" title="{{ 'Test connection' | trans }}" data-api-msg="{{ 'Server connected' | trans }}">
+					<svg class="icon">
+						<use xlink:href="#wifi"/>
+					</svg>
+					<span>
+						{{ 'Test connection' | trans }}
+					</span>
+				</a>
+			</form>
+		</div>
+	</div>
+{% endblock %}
+{% block js %}{% endblock %}
