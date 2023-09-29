@@ -21,7 +21,7 @@ namespace Box\Mod\Serviceproxmox;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
-use Box\Mod\Serviceproxmox\PVE2_API;
+use PVE2APIClient\PVE2APIClient\PVE2_API;
 use PDO;
 
 /**

@@ -1,24 +1,26 @@
 {
-    "name": "vendor/pve2-api-client",
-    "description": "A Proxmox VE API v2 client for Symfony",
-    "type": "library",
+    "name": "fossbilling/proxmox",
+    "description": "Proxmox Module for FOSSBilling",
+    "type": "project",
     "require": {
-      "php": "^8.1|^8.2",
-      "symfony/http-client": "^5.3",
-      "symfony/http-foundation": "^5.3",
-      "symfony/validator": "^5.3"
+      "php": "^8.0|^8.2",
+      "pve2-api-client/pve2-api-client": "^1.0.1"
     },
-    "autoload": {
-      "psr-4": {
-        "Symfony\\Component\\PVE2API\\": "src/"
-      }
+    "require-dev": {
+      "phpstan/extension-installer": "^1.2",
+      "phpstan/phpstan-deprecation-rules": "^1.1",
+      "phpunit/phpunit": "^9.6"
     },
-    "license": "MIT",
+    "license": "GPL 3.0",
     "authors": [
       {
         "name": "Christoph Schläpfer",
         "email": "chris+github@cleverly.ch"
       }
-    ]
-  }
-  
+    ],
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    }
+}
