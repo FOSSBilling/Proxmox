@@ -258,25 +258,62 @@
                                 <input class="form-control" type="text" name="realm" value="pam" required placeholder="pam">
                             </div>
                         </div>
+                        <!-- Add radio buttons for auth type (username & password or token) -->
+
                         <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Authentication Type' | trans }}:
+                            </label>
+                            <div class="col">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="auth_type" id="username" value="username">
+                                    <label class="form-check-label" for="username">{{ 'Username / Password' | trans }}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="auth_type" id="token" value="token">
+                                    <label class="form-check-label" for="token">{{ 'Token' | trans }}</label>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="mb-3 row" name="user_name_field">
                             <label class="form-label col-3 col-form-label">
                                 {{ 'Root user' | trans }}:
                             </label>
                             <div class="col">
-                                <input class="form-control" type="text" name="root_user" value="root" required placeholder="{{ 'Root username' | trans }}">
+                                <input class="form-control" type="text" name="root_user" value="root"  placeholder="{{ 'Root username' | trans }}">
                             </div>
                         </div>
-                        <div class="mb-3 row">
+                        <div class="mb-3 row"name="password_field">
                             <label class="form-label col-3 col-form-label">
                                 {{ 'Root password' | trans }}:
                             </label>
                             <div class="col">
-                                <input class="form-control" type="password" name="root_password" value="" required>
+                                <input class="form-control" type="password" name="root_password" value="" >
                                 <div class="help-section help-texts d-none" style="padding-left:15px;padding-top:8px;padding-bottom:10px;">
                                     <span>This password will only be used to create the access tokens on the pve server.</span>
                                 </div>
                             </div>
-
+                        </div>
+                        <div class="mb-3 row" name="token_name_field">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Token name' | trans }}:
+                            </label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="token_name" value=""  placeholder="{{ 'Token name' | trans }}">
+                            </div>
+                        </div>
+                        <div class="mb-3 row" name="token_value_field">
+                            <label class="form-label col-3 col-form-label">
+                                {{ 'Token value' | trans }}:
+                            </label>
+                            <div class="col">
+                                <input class="form-control" type="password" name="token_value" placeholder="token" >
+                                <div class="help-section help-texts d-none" style="padding-left:15px;padding-top:8px;padding-bottom:10px;">
+                                    <span>This token will be used to authenticate with the pve server.</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">
@@ -558,6 +595,29 @@
             $('#toggle-label').text('Show help');
         }
     });
+    document.getElementsByName("user_name_field")[0].hidden = true;
+    document.getElementsByName("password_field")[0].hidden = true;
+    document.getElementsByName("token_name_field")[0].hidden = true;
+    document.getElementsByName("token_value_field")[0].hidden = true;
+});
+
+// write native Javascript code that changes the visibility of the username / password or token fields based on the selected radio button
+
+var username = document.getElementById("username");
+var token = document.getElementById("token");
+
+username.addEventListener("click", function() {
+    document.getElementsByName("user_name_field")[0].hidden = false;
+    document.getElementsByName("password_field")[0].hidden = false;
+    document.getElementsByName("token_name_field")[0].hidden = true;
+    document.getElementsByName("token_value_field")[0].hidden = true;
+});
+
+token.addEventListener("click", function() {
+    document.getElementsByName("user_name_field")[0].hidden = true;
+    document.getElementsByName("password_field")[0].hidden = true;
+    document.getElementsByName("token_name_field")[0].hidden = false;
+    document.getElementsByName("token_value_field")[0].hidden = false;
 });
 
 

@@ -688,7 +688,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		$serveraccess = $this->find_access($server);
 		// find client permissions for server
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue);
+		$config = $this->di['mod_config']('Serviceproxmox');
+		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 
 		// Create Proxmox VM
 		if ($proxmox->login()) {

@@ -129,6 +129,22 @@
 									</div>
 								</div>
 							</div>
+							<div class="row mb-3">
+								<label class="col-md-3 form-label">
+									{{ 'Enable Debug logging '|trans }}
+								</label>
+
+								<div class="col-md-6">
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="radio" name="pmx_debug_logging" value="1" {% if params.pmx_debug_logging == '1' %} checked {% endif %} required>
+										<label class="form-check-label">Yes</label>
+									</div>
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="radio" name="pmx_debug_logging" value="0" {% if params.pmx_debug_logging == '0' %} checked {% endif %} required>
+										<label class="form-check-label">No</label>
+									</div>
+								</div>
+							</div>
 						</div>
 						<div class="card-footer text-end">
 							<button type="submit" class="btn btn-primary">{{ 'Update'|trans }}</button>

@@ -402,12 +402,17 @@ class Admin extends \Api_Abstract
             'ipv4'              => 'Server ipv4 is missing',
             'hostname'          => 'Server hostname is missing',
             'port'              => 'Server port is missing',
-            'root_user'         => 'Root user is missing',
-            'root_password'     => 'Root password is missing',
+            'auth_type'         => 'Authentication type is missing',
             'realm'             => 'Proxmox user realm is missing',
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        // check if server already exists based on name, ipv4 or hostname
+        $server = $this->di['db']->findOne('service_proxmox_server', 'name=:name OR ipv4=:ipv4 OR hostname=:hostname', array(':name' => $data['name'], ':ipv4' => $data['ipv4'], ':hostname' => $data['hostname']));
+        if ($server) {
+            throw new \Box_Exception('Server already exists');
+        }
+    
         $server                     = $this->di['db']->dispense('service_proxmox_server');
         $server->name               = $data['name'];
         $server->group              = $data['group'];
@@ -416,17 +421,34 @@ class Admin extends \Api_Abstract
         $server->hostname           = $data['hostname'];
         $server->port               = $data['port'];
         $server->realm              = $data['realm'];
-        $server->root_user          = $data['root_user'];
-        $server->root_password      = $data['root_password'];
         $server->active             = $data['active'];
         $server->created_at         = date('Y-m-d H:i:s');
         $server->updated_at         = date('Y-m-d H:i:s');
 
         $this->di['db']->store($server);
-
         $this->di['logger']->info('Created Proxmox server %s', $server->id);
+
+        // check if auth_type is username or token
+        if ($data['auth_type'] == 'username') {
+            $server->root_user      = $data['root_user'];
+            $server->root_password  = $data['root_password'];
+            $server->tokenname      = '';
+            $server->tokenvalue     = '';
+            $this->di['db']->store($server);
+            $this->getService()->test_connection($server);
+        } else {
+            $server->root_user      = '';
+            $server->root_password  = '';
+            $server->tokenname      = $data['tokenname'];
+            $server->tokenvalue     = $data['tokenvalue'];
+            $this->di['db']->store($server);
+            
+        }
+
+        
         // Validate server by testing connection
-        $this->getService()->test_connection;
+
+        
 
         return true;
     }
