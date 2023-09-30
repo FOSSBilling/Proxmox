@@ -124,7 +124,9 @@ jobs:
           cp -r ./src/. ./build/source/
           cp README.md ./build/source/
           cp LICENSE ./build/source/
-
+      - name: Create Build Archive for Tests
+        run: |
+          mkdir /tmp/builds/ && zip -rq /tmp/builds/Serviceproxmox.zip ./build/source/
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -142,6 +144,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          name: Serviceproxmox.zip
-          path: ./build/source/*
-          if-no-files-found: error
+          asset_path: /tmp/builds/Serviceproxmox.zip
+          asset_name: Serviceproxmox.zip
+          asset_content_type: application/zip
