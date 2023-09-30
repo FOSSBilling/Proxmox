@@ -47,6 +47,6 @@ jobs:
       - name: Upload the Final Artifact to GitHub
         uses: actions/upload-artifact@v3
         with:
-          name: Mollie
+          name: Serviceproxmox
           path: ./build/source/*
           if-no-files-found: error
