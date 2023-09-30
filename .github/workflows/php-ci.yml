@@ -34,14 +34,6 @@ jobs:
 
       - name: Create Build Archive for Tests
         run: |
-            cp ./src/config-sample.php ./src/config.php
-            mkdir -p ./src/data/cache
-            mkdir -p ./src/data/log
-            echo > ./src/data/log/license.log
-            echo > ./src/data/log/application.log
-            echo > ./src/data/log/php_error.log
-      - name: Create Build Archive for Tests
-        run: |
           mkdir /tmp/builds/ && tar -cvf /tmp/builds/build.tar ./
 
       - name: Upload Build Archive for Tests
@@ -77,6 +69,14 @@ jobs:
           args: --working-dir=FOSSBilling
           dev: no
 
+      - name: Create Build Archive for Tests
+        run: |
+            cp FOSSBilling/src/config-sample.php FOSSBilling/src/config.php
+            mkdir -p FOSSBilling/src/data/cache
+            mkdir -p FOSSBilling/src/data/log
+            echo > FOSSBilling/src/data/log/license.log
+            echo > FOSSBilling/src/data/log/application.log
+            echo > FOSSBilling/src/data/log/php_error.log
       - name: Run PHPStan
         uses: php-actions/phpstan@v3
         with:
