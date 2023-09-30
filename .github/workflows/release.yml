@@ -41,6 +41,7 @@ jobs:
           name: build-archive-php
           path: /tmp/builds
           retention-days: 1
+
   phpstan:
     runs-on: ubuntu-latest
     needs: [composer]
@@ -82,6 +83,7 @@ jobs:
           configuration: phpstan.neon
           memory_limit: 512M
   build:
+    needs: [phpstan]
     runs-on: ${{ matrix.operating-system }}
     
     strategy:
