@@ -1,9 +1,11 @@
 parameters:
-    level: 0
-    paths:
-        - src
-    treatPhpDocTypesAsCertain: false
-    scanDirectories:
-        - ../../
-    excludePaths:
-        - src/vendor
+	level: 1
+	paths:
+		- src
+		- FOSSBilling
+	excludePaths:
+		analyse:
+		- src/vendor
+		- FOSSBilling
+	ignoreErrors:
+		- '#^Function __trans not found\.$#'
