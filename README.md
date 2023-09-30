@@ -1,10 +1,10 @@
+[![Create a downloadable preview build](https://github.com/Anuril/Proxmox/actions/workflows/preview.yml/badge.svg)](https://github.com/Anuril/Proxmox/actions/workflows/preview.yml)
+[![Build and Test](https://github.com/Anuril/Proxmox/actions/workflows/php-ci.yml/badge.svg)](https://github.com/Anuril/Proxmox/actions/workflows/php-ci.yml)
+
 # Proxmox module for FOSSBilling
-Initial Proxmox support for FOSSBilling. 
+Proxmox support for FOSSBilling. 
 
 **This module is still in development and not ready for production use.**
-
-Based on [previous work](https://github.com/scith/BoxBilling_Proxmox) by [Scith](https://github.com/scith).
-
 
 ## Server List
 ![image](https://github.com/Anuril/Proxmox/assets/1939311/d81a052e-6c00-429b-81aa-7a3cd8dfad71)
@@ -42,12 +42,43 @@ You need to run Fossbilling 0.5.5, otherwise this preview will not work.
 ```mv /var/www/pmxconfig /var/www/pmxold```
 - Make sure you don't have any tables beginning with service_promxox in your database anymore:
 ```
-mysql -u root
-MariaDB [(none)]>use fossbilling;
-MariaDB [fossbilling]> show tables;```
-and then as Example: 
-```
-MariaDB [fossbilling]> drop table service_proxmox_tag;
+-- Create a stored procedure to drop tables starting with "service_proxmox" in the "client" database --
+
+USE client; -- Set this to the database where FOSSBilling is installed
+
+DELIMITER //
+CREATE PROCEDURE DropTables()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE tableName VARCHAR(255);
+    DECLARE cur CURSOR FOR
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'client' -- replace client with your database name
+        AND table_name LIKE 'service_proxmox%';
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO tableName;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        SET @sql = CONCAT('DROP TABLE IF EXISTS `', tableName, '`;');
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END LOOP;
+    CLOSE cur;
+END;
+//
+DELIMITER ;
+
+-- Call the stored procedure to drop the tables
+CALL DropTables();
+
+-- Drop the stored procedure
+DROP PROCEDURE IF EXISTS DropTables;
 ```
 
 ### Installation for 0.1.0 Preview
@@ -97,3 +128,8 @@ The Proxmox Addon now has its own Menu Entry:
 
 ## Licensing
 This module is licensed under the GNU General Public License v3.0. See the LICENSE file for more information.
+
+## Copyright
+Copyright: Christoph Schläpfer & the FOSSBilling Team.
+
+Based on [previous work](https://github.com/scith/BoxBilling_Proxmox) by [Scith](https://github.com/scith).

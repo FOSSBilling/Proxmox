@@ -19,6 +19,12 @@
 namespace Box\Mod\Serviceproxmox;
 
 
+/**
+ * Authentication Class Trait for FOSSSBilling Proxmox Module
+ * 
+ * This class trait contains all the functions that are used to manage the authentication inside the Proxmox Module.
+ * 
+ */
 trait ProxmoxAuthentication
 {
 	/* ################################################################################################### */
@@ -28,23 +34,21 @@ trait ProxmoxAuthentication
 	/**
 	 * Function to set up proxmox server for fossbilling
 	 * @param $server - server object
-	 * @return array - array of permission information
+	 * @return bool - array of permission information
 	 */
 	public function prepare_pve_setup($server)
 	{
 		$config = $this->di['mod_config']('Serviceproxmox');
-		// Retrieve the server access information
 		$serveraccess = $this->find_access($server);
-
-		// Create a new instance of the PVE2_API class with the server access details
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
 
 		// Attempt to log in to the server using the API
 		if (!$proxmox->login()) {
-			throw new \Box_Exception("Failed to connect to the server.");
+			throw new \Box_Exception("Failed to log in to the proxmox server. Check username & password and try again.");
 		}
 
-		// Create an API token for the Admin user if not logged in via API token
+		// If this code runs, login already worked, so either username + password or token login worked. 
+		// Create an API token for the Admin user if there is both tokenname and tokenvalue already present
 		if (empty($server->tokenname) || empty($server->tokenvalue)) {
 			// Check if the connecting user has the 'Realm.AllocateUser' permission
 			$permissions = $proxmox->get("/access/permissions");
@@ -75,7 +79,7 @@ trait ProxmoxAuthentication
 				case 0:
 					// Create a new group
 					$groupid = 'fossbilling_' . rand(1000, 9999);
-					$newgroup = $proxmox->post("/access/groups", array('groupid' => $groupid, 'comment' => 'fossbilling group'));
+					$proxmox->post("/access/groups", array('groupid' => $groupid, 'comment' => 'fossbilling group'));
 					break;
 				case 1:
 					// Use the existing group
@@ -84,7 +88,6 @@ trait ProxmoxAuthentication
 					throw new \Box_Exception("More than one group found");
 					break;
 				}
-
 
 			// Validate if there already is a user and token for fossbilling
 			$users = $proxmox->get("/access/users");
@@ -100,10 +103,11 @@ trait ProxmoxAuthentication
 					case 0:
 						// Create a new user
 						$userid = 'fb_' . rand(1000, 9999) . '@pve'; // TODO: Make realm configurable in the module settings
-						$newuser = $proxmox->post("/access/users", array('userid' => $userid, 'password' => $this->di['tools'], 'enable' => 1, 'comment' => 'fossbilling user', 'groups' => $groupid));
+						// $groupid has to be defined because it is set in the switch statement above, otherwise it would throw an exception. $proxmox also, because otherwise, login would fail and break.
+						$proxmox->post("/access/users", array('userid' => $userid, 'password' => $this->di['tools'], 'enable' => 1, 'comment' => 'fossbilling user', 'groups' => $groupid)); /* @phpstan-ignore-line */
 
 						// Create a token for the new user
-						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array());
+						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array()); /* @phpstan-ignore-line Proxmox is set, otherwise code errors out */ 
 
 						// Check if the token was created successfully
 						if ($token) {
@@ -116,7 +120,7 @@ trait ProxmoxAuthentication
 						break;
 					case 1:
 						// Create a token for the existing user
-						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array());
+						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array());/* @phpstan-ignore-line Proxmox is set, otherwise code errors out */ 
 						if ($token) {
 							$server->tokenname = $token['full-tokenid'];
 							$server->tokenvalue = $token['value'];
@@ -131,11 +135,11 @@ trait ProxmoxAuthentication
 				}
 				// Create permissions for the newly created token
 				// Set up permissions for the token (Admin user) to manage users, groups, and other administrative tasks
-				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEUserAdmin', 'propagate' => 1, 'users' => $userid));
-				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEAuditor', 'propagate' => 1, 'users' => $userid));
-				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVESysAdmin', 'propagate' => 1, 'users' => $userid));
-				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEPoolAdmin', 'propagate' => 1, 'users' => $userid));
-				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEDatastoreAdmin', 'propagate' => 1, 'users' => $userid));
+				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEUserAdmin', 'propagate' => 1, 'users' => $userid)); /* @phpstan-ignore-line */
+				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEAuditor', 'propagate' => 1, 'users' => $userid)); /* @phpstan-ignore-line */
+				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVESysAdmin', 'propagate' => 1, 'users' => $userid)); /* @phpstan-ignore-line */
+				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEPoolAdmin', 'propagate' => 1, 'users' => $userid)); /* @phpstan-ignore-line */
+				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEDatastoreAdmin', 'propagate' => 1, 'users' => $userid)); /* @phpstan-ignore-line */
 				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEUserAdmin', 'propagate' => 1, 'tokens' => $server->tokenname));
 				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVEAuditor', 'propagate' => 1, 'tokens' => $server->tokenname));
 				$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => 'PVESysAdmin', 'propagate' => 1, 'tokens' => $server->tokenname));
@@ -145,15 +149,6 @@ trait ProxmoxAuthentication
 				// Sleep for 5 seconds
 				sleep(5);
 
-				// Check if the permissions were created correctly by logging in and creating another user
-				/*
-					echo "<script>console.log('".json_encode($serveraccess)."');</script>";
-					echo "<script>console.log('".json_encode($userid)."');</script>";
-					echo "<script>console.log('".json_encode($server->realm)."');</script>";
-					echo "<script>console.log('".json_encode($server->tokenname)."');</script>";
-					echo "<script>console.log('".json_encode($server->tokenvalue)."');</script><br /><br />";
-					*/
-
 				// Delete the root password and unset the PVE2_API instance
 				$server->root_password = null;
 				unset($proxmox);
@@ -161,7 +156,7 @@ trait ProxmoxAuthentication
 				// Return the test_access result for the server
 				return $this->test_access($server);
 			}
-		} else {
+		} elseif (!empty($server->tokenname) && !empty($server->tokenvalue)) {
 			// Validate Permissions for the token
 			$permissions = $proxmox->get("/access/acl/");
 			// Check for 'PVEUserAdmin', 'PVEAuditor', 'PVESysAdmin', 'PVEPoolAdmin', and 'PVEDatastoreAdmin' permissions, and if they don't exist, try to create them.
@@ -177,8 +172,9 @@ trait ProxmoxAuthentication
 					$permissions = $proxmox->put("/access/acl/", array('path' => '/', 'roles' => $permission, 'propagate' => 1, 'tokens' => $server->tokenname));
 				}
 			}
-
-		}
+			return $this->test_access($server);
+		} 
+		return false;
 	}
 
 
@@ -191,11 +187,9 @@ trait ProxmoxAuthentication
 	 */
 	public function test_access($server)
 	{
-		// Retrieve the server access information
-		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		// Create a new instance of the PVE2_API class with the server access details
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
+		$serveraccess = $this->find_access($server);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
 
 		// Attempt to log in to the server using the API
 		if (!$proxmox->login()) {
@@ -245,7 +239,7 @@ trait ProxmoxAuthentication
 		$this->di['db']->store($clientuser);
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
 		if (!$proxmox->login()) {
 			throw new \Box_Exception("Failed to connect to the server. create_client_user");
 		}

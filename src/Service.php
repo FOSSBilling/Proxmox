@@ -18,15 +18,17 @@
 
 namespace Box\Mod\Serviceproxmox;
 
-require_once 'pve2_api.class.php';
+require __DIR__ . '/vendor/autoload.php';
 
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use PDO;
+use PDOException;
+
 
 /**
- * Proxmox module for FOSSBilling
+ * Provides the Proxmox module for FOSSBilling.
  */
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -46,31 +48,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	use ProxmoxVM;
 	use ProxmoxTemplates;
 	use ProxmoxIPAM;
-
-
-	public function validateCustomForm(array &$data, array $product)
-	{
-		if ($product['form_id']) {
-			$formbuilderService = $this->di['mod_service']('formbuilder');
-			$form = $formbuilderService->getForm($product['form_id']);
-
-			foreach ($form['fields'] as $field) {
-				if ($field['required'] == 1) {
-					$field_name = $field['name'];
-					if ((!isset($data[$field_name]) || empty($data[$field_name]))) {
-						throw new \Box_Exception("You must fill in all required fields. " . $field['label'] . " is missing", null, 9684);
-					}
-				}
-
-				if ($field['readonly'] == 1) {
-					$field_name = $field['name'];
-					if ($data[$field_name] != $field['default_value']) {
-						throw new \Box_Exception("Field " . $field['label'] . " is read only. You can not change its value", null, 5468);
-					}
-				}
-			}
-		}
-	}
 
 	/**
 	 * Method to install module. In most cases you will provide your own
@@ -159,7 +136,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 					} else {
 						throw new \Box_Exception("The version number of the sql dump is bigger than the current version number of the module. Please check the installed Module version.", null, 9684);
 					}
-				} catch (Exception $e) {
+				} catch (\Box_Exception $e) {
 					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
 				}
 			}
@@ -345,7 +322,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		);
 
 		foreach ($tables as $table) {
-			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'";
+			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'"; /* @phpstan-ignore-line */
 			$result = $this->di['db']->query($sql);
 			$row = $result->fetch();
 			// check if version is the same as current version
@@ -503,7 +480,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
 			fclose($handle);
-		} catch (Exception $e) {
+		} catch (\Box_Exception $e) {
 			throw new \Box_Exception('Error during backup process: ' . $e->getMessage());
 		}
 
@@ -594,7 +571,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 					}
 
 					return true;
-				} catch (Exception $e) {
+				} catch (\Box_Exception $e) {
 					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
 				}
 			} else {
@@ -689,7 +666,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// find client permissions for server
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 
 		// Create Proxmox VM
 		if ($proxmox->login()) {
@@ -852,52 +829,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		return \Symfony\Component\HttpClient\HttpClient::create();
 	}
 
-	// function to get tags for type
-	public function get_tags($data)
-	{
-		// get list of tags for input type
-		$tags = $this->di['db']->find('service_proxmox_tag', 'type=:type', array(':type' => $data['type']));
-		// return tags
-		return $tags;
-	}
+	
 
-	// function to save tags for type
-	public function save_tag($data)
+	public function validateCustomForm(array &$data, array $product)
 	{
-		// $data contains 'type' and 'tag' 
-		
-		// search if the tag already exists
-		error_log('saving tag: ' . print_r($data));
-		$tag_exists = $this->di['db']->findOne('service_proxmox_tag', 'type=:type AND name=:name', array(':type' => $data['type'], ':name' => $data['tag']));
-		// and if not create it
-		if (!$tag_exists) {
-			$model = $this->di['db']->dispense('service_proxmox_tag');
-			$model->type = $data['type'];
-			$model->name = $data['tag'];
-			$this->di['db']->store($model);
-			return $model;
+		if ($product['form_id']) {
+			$formbuilderService = $this->di['mod_service']('formbuilder');
+			$form = $formbuilderService->getForm($product['form_id']);
+
+			foreach ($form['fields'] as $field) {
+				if ($field['required'] == 1) {
+					$field_name = $field['name'];
+					if ((!isset($data[$field_name]) || empty($data[$field_name]))) {
+						throw new \Box_Exception("You must fill in all required fields. " . $field['label'] . " is missing", null, 9684);
+					}
+				}
+
+				if ($field['readonly'] == 1) {
+					$field_name = $field['name'];
+					if ($data[$field_name] != $field['default_value']) {
+						throw new \Box_Exception("Field " . $field['label'] . " is read only. You can not change its value", null, 5468);
+					}
+				}
+			}
 		}
-		// return the tag that was just created
-		return $tag_exists;
 	}
-		
-
-	// Function to return tags for storage (stored in service_proxmox_storage->storageclass) ($data contains storageid)
-	public function get_tags_by_storage($data)
-	{
-		// get storageclass for storage
-		// log to debug.log
-		error_log('get_tags_by_storage: ' . $data['storageid']);
-		$storage = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['storageid']));
-		// return tags (saved in json format in $storage->storageclass) (F.ex ["ssd","hdd"])
-		// as well as the service_proxmox_tag id for each tag so there is a key value pair with id and name.
-		
-		$tags = json_decode($storage->storageclass, true);
-		return $tags;
-
-		
-	}
-
-
-
 }

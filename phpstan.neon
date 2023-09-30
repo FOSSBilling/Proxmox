@@ -1,0 +1,14 @@
+parameters:
+	level: 1
+	bootstrapFiles:
+		- FOSSBilling/src/load.php
+	paths:
+		- src
+		- FOSSBilling
+	excludePaths:
+		analyse:
+		- src/vendor
+		- FOSSBilling
+	ignoreErrors:
+		- '#^Function __trans not found\.$#'
+		- '#^Variable \$proxmox might not be defined\.#'

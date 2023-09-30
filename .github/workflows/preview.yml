@@ -1,0 +1,52 @@
+name: Create a downloadable preview build
+
+on:
+  push:
+    branches: [main, rework-project-structure]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ["8.0"]
+
+    name: Create a downloadable preview build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+
+      - name: Check PHP Version
+        run: php -v
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Create temporary directories and files
+        run: |
+          mkdir -p ./build/source
+
+      - name: Installing Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-dev
+
+      - name: Copy mandatory files to the temporary build folder
+        run: |
+          cp -r ./src/. ./build/source/
+          cp README.md ./build/source/
+          cp LICENSE ./build/source/
+
+      - name: Upload the Final Artifact to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: Serviceproxmox
+          path: ./build/source/*
+          if-no-files-found: error

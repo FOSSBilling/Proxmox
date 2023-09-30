@@ -570,6 +570,7 @@ class Admin extends \Api_Abstract
             // delete server
             $server = $this->di['db']->getExistingModelById('service_proxmox_server', $data['id'], 'Server not found');
             $this->di['db']->trash($server);
+            return true;
         }
     }
 
@@ -1398,7 +1399,7 @@ class Admin extends \Api_Abstract
         $vm_config_template_storage->created_at = date('Y-m-d H:i:s');
         $vm_config_template_storage->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($vm_config_template_storage);
-
+        return true;
     }
 
 
@@ -1453,7 +1454,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         // Retrieve associated ip_network
-        $ip_range  = $this->di['db']->findOne('service_proxmox_ip_range', 'id=:id', array(':id' => $id));
+        $ip_range  = $this->di['db']->findOne('service_proxmox_ip_range', 'id=:id', array(':id' => $data['id']));
 
         // Fill ip_network
         $ip_range->cidr = $data['cidr'];
@@ -1551,9 +1552,15 @@ class Admin extends \Api_Abstract
      */
     public function client_vlan_delete($data)
     {
+        $required = array(
+            'id'          => 'ID is missing',
+        ); 
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        
         $client_network = $this->di['db']->findOne('service_proxmox_client_vlan', 'id = ?', [$data['id']]);
         $this->di['db']->trash($client_network);
-        $this->di['logger']->info('Delete Client Network %s', $id);
+        $this->di['logger']->info('Delete Client Network %s', $data['id']);
         return true;
     }
 
