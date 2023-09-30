@@ -24,6 +24,7 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use PDO;
+use PDOException;
 
 
 /**
@@ -135,7 +136,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 					} else {
 						throw new \Box_Exception("The version number of the sql dump is bigger than the current version number of the module. Please check the installed Module version.", null, 9684);
 					}
-				} catch (Exception $e) {
+				} catch (Box_Exception $e) {
 					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
 				}
 			}
@@ -321,7 +322,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		);
 
 		foreach ($tables as $table) {
-			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'";
+			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'"; /* @phpstan-ignore-line */
 			$result = $this->di['db']->query($sql);
 			$row = $result->fetch();
 			// check if version is the same as current version
@@ -479,7 +480,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
 			fclose($handle);
-		} catch (Exception $e) {
+		} catch (Box_Exception $e) {
 			throw new \Box_Exception('Error during backup process: ' . $e->getMessage());
 		}
 
@@ -570,7 +571,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 					}
 
 					return true;
-				} catch (Exception $e) {
+				} catch (Box_Exception $e) {
 					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
 				}
 			} else {
