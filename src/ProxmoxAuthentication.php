@@ -37,7 +37,7 @@ trait ProxmoxAuthentication
 		$serveraccess = $this->find_access($server);
 
 		// Create a new instance of the PVE2_API class with the server access details
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
 
 		// Attempt to log in to the server using the API
 		if (!$proxmox->login()) {
@@ -195,7 +195,7 @@ trait ProxmoxAuthentication
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
 		// Create a new instance of the PVE2_API class with the server access details
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
 
 		// Attempt to log in to the server using the API
 		if (!$proxmox->login()) {
@@ -245,7 +245,7 @@ trait ProxmoxAuthentication
 		$this->di['db']->store($clientuser);
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
 		if (!$proxmox->login()) {
 			throw new \Box_Exception("Failed to connect to the server. create_client_user");
 		}

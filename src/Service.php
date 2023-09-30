@@ -18,11 +18,13 @@
 
 namespace Box\Mod\Serviceproxmox;
 
+require __DIR__ . '/vendor/autoload.php';
+
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
-use PVE2APIClient\PVE2APIClient\PVE2_API;
 use PDO;
+use \PVE2APIClient\PVE2_API as PVE2_API;
 
 /**
  * Proxmox module for FOSSBilling
@@ -688,7 +690,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// find client permissions for server
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 
 		// Create Proxmox VM
 		if ($proxmox->login()) {

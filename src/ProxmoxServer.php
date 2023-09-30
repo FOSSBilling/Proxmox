@@ -36,7 +36,7 @@ trait ProxmoxServer
 		// Test if login
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 		// check if tokenname and tokenvalue contain values by checking their content
 		if (empty($server->tokenname) || empty($server->tokenvalue)) {
 			if (!empty($server->root_user) && !empty($server->root_password)) {
@@ -66,7 +66,7 @@ trait ProxmoxServer
 		// Test if login
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 		// check if tokenname and tokenvalue contain values by checking their content
 		if (empty($server->tokenname) || empty($server->tokenvalue)) {
 			throw new \Box_Exception("Token Access Failed: No tokenname or tokenvalue provided");
@@ -188,7 +188,7 @@ trait ProxmoxServer
 		// Retrieve associated server
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 
 		if ($proxmox->login()) {
 			error_log("ProxmoxServer.php: getHardwareData: Login successful");
@@ -204,7 +204,7 @@ trait ProxmoxServer
 		// Retrieve associated server
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$storage = $proxmox->get("/nodes/" . $server->name . "/storage");
 			return $storage;
@@ -219,7 +219,7 @@ trait ProxmoxServer
 		// Retrieve associated server
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$assigned_resources = $proxmox->get("/nodes/" . $server->name . "/qemu");
 			return $assigned_resources;
@@ -235,7 +235,7 @@ trait ProxmoxServer
 
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$appliances = $proxmox->get("/nodes/" . $server->name . "/aplinfo");
 			return $appliances;
@@ -249,7 +249,7 @@ trait ProxmoxServer
 	{
 		$serveraccess = $this->find_access($server);
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$templates = $proxmox->get("/nodes/" . $server->name . "/qemu");
 			return $templates;

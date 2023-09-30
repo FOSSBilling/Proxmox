@@ -96,7 +96,7 @@ trait ProxmoxVM
 			// Connect to YNH API
 			$serveraccess = $this->find_access($server);
 			$config = $this->di['mod_config']('Serviceproxmox');
-			$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+			$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
 
 			if ($proxmox->login()) {
 				$proxmox->post("/nodes/" . $model->node . "/" . $product_config['virt'] . "/" . $model->vmid . "/status/shutdown", array());
@@ -141,7 +141,7 @@ trait ProxmoxVM
 
 		// Test if login
 		$serveraccess = $this->find_access($server);
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->get_version()) {
 			$status = $proxmox->get("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/current");
 			// VM monitoring?
@@ -170,7 +170,7 @@ trait ProxmoxVM
 
 		// Test if login
 		$serveraccess = $this->find_access($server);
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/shutdown", array());
 			$status = $proxmox->get("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/current");
@@ -217,7 +217,7 @@ trait ProxmoxVM
 
 		// Test if login
 		$serveraccess = $this->find_access($server);
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/start", array());
 			return true;
@@ -242,7 +242,7 @@ trait ProxmoxVM
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 		//echo "D: ".var_dump($order);
 		$serveraccess = $this->find_access($server);
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$settings = array(
 				'forceStop' 	=> true
@@ -278,9 +278,9 @@ trait ProxmoxVM
 
 		// The user enters the password to see the iframe: TBD
 		//$password = 'test';
-		//$proxmox = new PVE2_API($serveraccess, $client->id, $server->name, $password);
+		//$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $client->id, $server->name, $password);
 
-		$proxmox = new PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->view_tokenname, tokensecret: $clientuser->view_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->view_tokenname, tokensecret: $clientuser->view_tokenvalue,debug: $config['pmx_debug_logging']);
 
 		if ($proxmox->login()) {
 			// Get VNC Web proxy ticket by calling /nodes/{node}/{type}/{vmid}/vncproxy
