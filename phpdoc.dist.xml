@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdocumentor
+        configVersion="3"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://www.phpdoc.org"
+>
+    <title>phpDocumentor</title>
+    <paths>
+        <output>docs/</output>
+    </paths>
+    <version number="3.0">
+        <api format="php">
+            <ignore hidden="true" symlinks="true">
+                <path>tests/**/*</path>
+                <path>src/vendor/**/*</path>
+            </ignore>
+        </api>
+    </version>
+</phpdocumentor>

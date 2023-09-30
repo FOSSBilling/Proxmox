@@ -72,4 +72,53 @@ trait ProxmoxTemplates
 		$template = $this->di['db']->getExistingModelById('service_proxmox_lxc_config_template', $id);
 		return $template;
 	}
+
+
+
+	// function to get tags for type
+	public function get_tags($data)
+	{
+		// get list of tags for input type
+		$tags = $this->di['db']->find('service_proxmox_tag', 'type=:type', array(':type' => $data['type']));
+		// return tags
+		return $tags;
+	}
+
+	// function to save tags for type
+	public function save_tag($data)
+	{
+		// $data contains 'type' and 'tag' 
+		
+		// search if the tag already exists
+		error_log('saving tag: ' . print_r($data));
+		$tag_exists = $this->di['db']->findOne('service_proxmox_tag', 'type=:type AND name=:name', array(':type' => $data['type'], ':name' => $data['tag']));
+		// and if not create it
+		if (!$tag_exists) {
+			$model = $this->di['db']->dispense('service_proxmox_tag');
+			$model->type = $data['type'];
+			$model->name = $data['tag'];
+			$this->di['db']->store($model);
+			return $model;
+		}
+		// return the tag that was just created
+		return $tag_exists;
+	}
+		
+
+	// Function to return tags for storage (stored in service_proxmox_storage->storageclass) ($data contains storageid)
+	public function get_tags_by_storage($data)
+	{
+		// get storageclass for storage
+		// log to debug.log
+		error_log('get_tags_by_storage: ' . $data['storageid']);
+		$storage = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['storageid']));
+		// return tags (saved in json format in $storage->storageclass) (F.ex ["ssd","hdd"])
+		// as well as the service_proxmox_tag id for each tag so there is a key value pair with id and name.
+		
+		$tags = json_decode($storage->storageclass, true);
+		return $tags;
+
+		
+	}
+
 }

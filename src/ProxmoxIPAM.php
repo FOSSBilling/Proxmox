@@ -19,15 +19,18 @@
 namespace Box\Mod\Serviceproxmox;
 
 /**
- * Proxmox module for FOSSBilling
+ * IPAM Class Trait for FOSSSBilling Proxmox Module
+ * 
+ * This class trait contains all the functions that are used to manage the IPAM inside the Proxmox Module.
+ * 
  */
 trait ProxmoxIPAM
 {
-	/* ################################################################################################### */
-	/* ####################################  IPAM Management   ########################################### */
-	/* ################################################################################################### */
-
-	// Function that gets all the VM templates and returns them as an array
+	/**
+	 * Retrieves the IP ranges from the Proxmox IPAM.
+	 *
+	 * @return array An array of IP ranges.
+	 */
 	public function get_ip_ranges()
 	{
 		// get all the VM templates from the service_proxmox_vm_config_template table
@@ -35,7 +38,12 @@ trait ProxmoxIPAM
 		return $ip_ranges;
 	}
 
-	// Function that gets all IP Adresses
+
+	/**
+	 * Retrieves a list of IP addresses from the Proxmox IPAM.
+	 *
+	 * @return array An array of IP addresses.
+	 */
 	public function get_ip_adresses()
 	{
 		// get all the VM templates from the service_proxmox_vm_config_template table
@@ -43,12 +51,14 @@ trait ProxmoxIPAM
 		return $ip_addresses;
 	}
 
-	// Function that gets all the LXC templates and returns them as an array
+	/**
+	 * Retrieves a list of VLANs from the Proxmox IPAM service.
+	 *
+	 * @return array An array of VLAN objects, each containing the VLAN ID and name.
+	 */
 	public function get_vlans()
 	{
-		// get all the LXC templates from the service_proxmox_lxc_config_template table
 		$vlans = $this->di['db']->find('service_proxmox_client_vlan');
-		// Fill in the client name
 		foreach ($vlans as $vlan) {
 			$client = $this->di['db']->getExistingModelById('client', $vlan->client_id);
 			$vlan->client_name = $client->first_name . " " . $client->last_name;
@@ -57,7 +67,21 @@ trait ProxmoxIPAM
 		return $vlans;
 	}
 
+
+}
+
+
 	/* ################################################################################################### */
 	/* ###################################  Manage PVE Network   ######################################### */
 	/* ################################################################################################### */
+
+
+/**
+ * Trait ProxmoxNetwork
+ * 
+ * This class trait contains all the functions that are used to manage the SDN on the PVE Hosts.
+ */
+trait ProxmoxNetwork
+{
+
 }
