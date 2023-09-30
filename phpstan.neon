@@ -9,3 +9,4 @@ parameters:
 		- FOSSBilling
 	ignoreErrors:
 		- '#^Function __trans not found\.$#'
+		- '#^Variable \$proxmox might not be defined\.#'
