@@ -1,0 +1,105 @@
+name: Create release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  phpstan:
+    runs-on: ubuntu-latest
+    needs: [composer]
+
+    name: PHPStan - FOSSBilling Preview
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-archive-php
+          path: /tmp/builds
+
+      - name: Extract build archive
+        run: tar -xvf /tmp/builds/build.tar ./
+
+      - name: Checkout FOSSBilling Source Code
+        uses: actions/checkout@v4
+        with:
+          repository: "FOSSBilling/FOSSBilling"
+          path: "FOSSBilling"
+
+      - name: Install Composer Dependencies
+        uses: php-actions/composer@v6
+        with:
+          args: --working-dir=FOSSBilling
+          dev: no
+
+      - name: Create Build Archive for Tests
+        run: |
+            cp FOSSBilling/src/config-sample.php FOSSBilling/src/config.php
+            mkdir -p FOSSBilling/src/data/cache
+            mkdir -p FOSSBilling/src/data/log
+            echo > FOSSBilling/src/data/log/license.log
+            echo > FOSSBilling/src/data/log/application.log
+            echo > FOSSBilling/src/data/log/php_error.log
+      - name: Run PHPStan
+        uses: php-actions/phpstan@v3
+        with:
+          php_version: latest
+          configuration: phpstan.neon
+          memory_limit: 512M
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ["8.0", "8.1","8.2"]
+
+    name: Create a downloadable build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+
+      - name: Check PHP Version
+        run: php -v
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Create temporary directories and files
+        run: |
+          mkdir -p ./build/source
+
+      - name: Installing Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-dev
+
+      - name: Copy mandatory files to the temporary build folder
+        run: |
+          cp -r ./src/. ./build/source/
+          cp README.md ./build/source/
+          cp LICENSE ./build/source/
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./Serviceproxmox.zip
+          asset_name: serviceproxmox.zip
+          asset_content_type: application/zip
