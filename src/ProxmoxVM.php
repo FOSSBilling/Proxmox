@@ -122,6 +122,7 @@ trait ProxmoxVM
 				throw new \Box_Exception("Login to Proxmox Host failed");
 			}
 		}
+		return false;
 	}
 
 	/*
@@ -141,6 +142,7 @@ trait ProxmoxVM
 
 		// Test if login
 		$serveraccess = $this->find_access($server);
+		$config = $this->di['mod_config']('Serviceproxmox');
 		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->get_version()) {
 			$status = $proxmox->get("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/current");
@@ -170,6 +172,7 @@ trait ProxmoxVM
 
 		// Test if login
 		$serveraccess = $this->find_access($server);
+		$config = $this->di['mod_config']('Serviceproxmox');
 		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/shutdown", array());
@@ -217,6 +220,7 @@ trait ProxmoxVM
 
 		// Test if login
 		$serveraccess = $this->find_access($server);
+		$config = $this->di['mod_config']('Serviceproxmox');
 		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/start", array());
@@ -242,6 +246,7 @@ trait ProxmoxVM
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 		//echo "D: ".var_dump($order);
 		$serveraccess = $this->find_access($server);
+		$config = $this->di['mod_config']('Serviceproxmox');
 		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
 		if ($proxmox->login()) {
 			$settings = array(
@@ -255,60 +260,4 @@ trait ProxmoxVM
 		}
 	}
 
-
-	/*
-		VM iframe for Web CLI
-	*/
-	public function vm_cli($order, $service)
-	{
-
-		$product = $this->di['db']->load('product', $order->product_id);
-		$product_config = json_decode($product->config, 1);
-		$client  = $this->di['db']->load('client', $order->client_id);
-
-		// Retrieve associated server
-		$server = $this->di['db']->findOne('service_proxmox_server', 'id=:id', array(':id' => $service->server_id));
-		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
-
-		// Find access route
-		$serveraccess = $this->find_access($server);
-
-		// Setup console type
-		$console = ($product_config['virt'] == 'qemu') ? 'kvm' : 'shell';
-
-		// The user enters the password to see the iframe: TBD
-		//$password = 'test';
-		//$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $client->id, $server->name, $password);
-
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->view_tokenname, tokensecret: $clientuser->view_tokenvalue,debug: $config['pmx_debug_logging']);
-
-		if ($proxmox->login()) {
-			// Get VNC Web proxy ticket by calling /nodes/{node}/{type}/{vmid}/vncproxy
-			$vncproxy_response = $proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/vncproxy",	array('node' => $server->name, 'vmid' => $service->vmid));
-			$vncproxy_port = $vncproxy_response['data']['port'];
-			$vncproxy_ticket = $vncproxy_response['data']['ticket'];
-			// open a vnc web socket
-			// we'll do it ourselves until the upstream API supports it
-			$put_post_http_headers[] = "Authorization: PVEAPIToken={$clientuser->view_tokenname}={$clientuser->view_tokenvalue}";
-			// add the vncticket to the post_http_headers
-			$put_post_http_headers[] = "vncticket: {$vncproxy_ticket}";
-			// add the port to the post_http_headers
-			$put_post_http_headers[] = "port: {$vncproxy_port}";
-			// add the host to the post_http_headers
-			$put_post_http_headers[] = "host: {$serveraccess}";
-			// add the vmid to the post_http_headers
-			$put_post_http_headers[] = "vmid: {$service->vmid}";
-			// open websocket connection and display the console
-			/* 			curl_setopt($prox_ch, CURLOPT_URL, "https://{$serveraccess}:8006/api2/json/nodes/{$server->name}/{$product_config['virt']}/{$service->vmid}/vncwebsocket");
-			curl_setopt($prox_ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($prox_ch, CURLOPT_POSTFIELDS, $login_postfields_string);
-			curl_setopt($prox_ch, CURLOPT_SSL_VERIFYPEER, $this->verify_ssl);
-			curl_setopt($prox_ch, CURLOPT_SSL_VERIFYHOST, $this->verify_ssl);
-			*/
-			// return array of vncport & ticket
-			return array('port' => $vncproxy_port, 'ticket' => $vncproxy_ticket);
-		} else {
-			throw new \Box_Exception("Login to Proxmox VM failed.");
-		}
-	}
 }
