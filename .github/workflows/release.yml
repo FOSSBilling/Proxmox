@@ -43,7 +43,12 @@ jobs:
           retention-days: 1
 
   phpstan:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.operating-system }}
+   
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ["8.0", "8.1","8.2"]
     needs: [composer]
 
     name: PHPStan - FOSSBilling Preview
@@ -89,7 +94,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ["8.0", "8.1","8.2"]
+        php-versions: ["8.1"]
 
     name: Create a downloadable build
     steps:
