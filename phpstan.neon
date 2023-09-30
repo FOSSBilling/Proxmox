@@ -1,5 +1,5 @@
 parameters:
-	level: 2
+	level: 1
 	bootstrapFiles:
 		- FOSSBilling/src/load.php
 	paths:
