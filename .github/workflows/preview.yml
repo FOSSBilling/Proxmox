@@ -2,7 +2,7 @@ name: Create a downloadable preview build
 
 on:
   push:
-    branches: [main, rework-project-structure]
+    branches: [main, 0.1.0]
   pull_request:
     branches: [main]
 
