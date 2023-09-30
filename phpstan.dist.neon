@@ -1,0 +1,15 @@
+parameters:
+	level: 1
+	bootstrapFiles:
+	- ../../load.php
+	paths:
+		- ./src
+	excludePaths:
+		analyse:
+		- ./src/vendor
+	scanDirectories:
+		- ../../
+		- ./src/vendor
+	ignoreErrors:
+		- '#^Function __trans not found\.$#'
+		- '#^Variable \$proxmox might not be defined\.#'

@@ -39,10 +39,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		$this->di = $di;
 	}
 
-	public function getDi(): ?\Pimple\Container
-	{
-		return $this->di;
-	}
 	use ProxmoxAuthentication;
 	use ProxmoxServer;
 	use ProxmoxVM;
@@ -57,8 +53,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	 * database table might be enough.
 	 *
 	 * @return bool
+	 * 
+	 * @throws \Box_Exception
 	 */
-	public function install()
+	public function install(): bool
 	{
 		// read manifest.json to get current version number
 		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
@@ -208,7 +206,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	 * 
 	 * @return bool
 	 */
-	public function uninstall()
+	public function uninstall(): bool
 	{
 		$this->pmxdbbackup('uninstall');
 		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox`");
@@ -242,7 +240,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	 * @param string $previous_version
 	 * @return bool
 	 */
-	public function upgrade($previous_version)
+	public function upgrade($previous_version): bool
 	{
 		// read current module version from manifest.json
 		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
@@ -289,6 +287,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
 		return true;
 	}
+
+    /**
+     * Method to update module. When you release new version to
+     * extensions.fossbilling.org then this method will be called
+     * after the new files are placed.
+     *
+     * @param array $manifest - information about the new module version
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
+     */
+    public function update(array $manifest): bool
+    {
+        // throw new \Box_Exception("Throw exception to terminate module update process with a message", array(), 125);
+        return true;
+    }
+
+
+
 
 	/**
 	 * Method to check if all tables have been migrated to current Module Version.

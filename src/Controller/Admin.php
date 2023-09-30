@@ -37,7 +37,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      * 
      * @return array
      */
-    public function fetchNavigation()
+    public function fetchNavigation(): array
     {
         return array(
             'group' => array(
@@ -76,8 +76,10 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     /**
      * Registers the admin area routes
      * 
+     * @param \Box_App $app
+     * @return void
      */
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/serviceproxmox', 'get_index', null, get_class($this));
         $app->get('/serviceproxmox/templates', 'get_templates', null, get_class($this));
@@ -103,8 +105,11 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Renders the admin area index page
+     * 
+     * @param \Box_App $app
+     * @return string
      */
-    public function get_index(\Box_App $app)
+    public function get_index(\Box_App $app):string
     {
         $this->di['is_admin_logged'];
         return $app->render('mod_serviceproxmox_index');
@@ -112,8 +117,11 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Renders the admin area templates page
+     * 
+     * @param \Box_App $app
+     * @return string
      */
-    public function get_templates(\Box_App $app)
+    public function get_templates(\Box_App $app):string
     {
         return $app->render('mod_serviceproxmox_templates');
     }
@@ -121,8 +129,10 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     /**
      * Enables the QEMU Template
      *
+     * @param \Box_App $app
+     * @return void
      */
-    public function enable_template(\Box_App $app, $id)
+    public function enable_template(\Box_App $app, $id): void
     {
         $api = $this->di['api_admin'];
         $api->Serviceproxmox_vm_config_template_enable(array('id' => $id));
@@ -132,8 +142,10 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     /**
      * Disables the QEMU Template
      *
+     * @param \Box_App $app
+     * @return void
      */
-    public function disable_template(\Box_App $app, $id)
+    public function disable_template(\Box_App $app, $id): void
     {
         $api = $this->di['api_admin'];
         $api->Serviceproxmox_vm_config_template_disable(array('id' => $id));
@@ -141,23 +153,36 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     }
     /**
      * Renders the admin area ipam page
+     * 
+     * @param \Box_App $app
+     * @return string
      */
-    public function get_ipam(\Box_App $app)
+    public function get_ipam(\Box_App $app): string
     {
         return $app->render('mod_serviceproxmox_ipam');
     }
 
     /**
-     * Handles CRUD for Proxmox Servers
+     * Handles Updates for Proxmox Servers
+     * 
+     * @param \Box_App $app
+     * @param int $id     
      */
-    public function get_server(\Box_App $app, $id)
+    public function get_server(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $server = $api->Serviceproxmox_server_get(array('server_id' => $id));
         return $app->render('mod_serviceproxmox_server', array('server' => $server));
     }
 
-    public function get_server_by_group(\Box_App $app, $id)
+    /**
+     * Retrieves the server by group ID.
+     *
+     * @param \Box_App $app The Box application instance.
+     * @param int $id The ID of the group.
+     * @return string The server information.
+     */
+    public function get_server_by_group(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $server = $api->Serviceproxmox_servers_in_group(array('group' => $id));
@@ -165,9 +190,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     }
 
     /** 
-     * Handles CRUD for Proxmox Storage
+     * Handles Updates for Proxmox Storage
+     * 
+     * @param \Box_App $app
+     * @param int $id
+     * 
+     * @return string
      */
-    public function get_storage(\Box_App $app, $id)
+    public function get_storage(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $storage = $api->Serviceproxmox_storage_get(array('storage_id' => $id));
@@ -175,9 +205,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Handles CRUD for IP Range
+     * Handles Updates for IP Range
+     * 
+     * @param \Box_App $app
+     * @param int $id
+     * 
+     * @return string
      */
-    public function get_ip_range(\Box_App $app, $id)
+    public function get_ip_range(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $ip_range = $api->Serviceproxmox_ip_range_get(array('id' => $id));
@@ -185,9 +220,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Handles CRUD for Client VLAN
+     * Handles Updates for Client VLAN
+     * 
+     * @param \Box_App $app
+     * @param int $id
      */
-    public function client_vlan(\Box_App $app, $id)
+    public function client_vlan(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $client_vlan = $api->Serviceproxmox_vlan_get(array('id' => $id));
@@ -195,9 +233,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Handles CRUD for LXC Config Templates
+     * Handles Updates for LXC Config Templates
+     * 
+     * @param \Box_App $app
+     * @param int $id
      */
-    public function get_lxc_config_template(\Box_App $app, $id)
+    public function get_lxc_config_template(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $lxc_config_template = $api->Serviceproxmox_lxc_config_template_get(array('id' => $id));
@@ -205,9 +246,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Handles CRUD for VM Config Templates
+     * Handles Updates for VM Config Templates
+     * 
+     * @param \Box_App $app
+     * @param int $id
+     * 
+     * @return string
      */
-    public function get_vm_config_template(\Box_App $app, $id)
+    public function get_vm_config_template(\Box_App $app, $id): string
     {
         error_log("Controller get_vm_config_template");
         $api = $this->di['api_admin'];
@@ -217,12 +263,15 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Renders the admin area settings page
+     * 
+     * @param \Box_App $app
+     * @return void
      */
-    public function start_backup(\Box_App $app)
+    public function start_backup(\Box_App $app):void
     {
 
         $api = $this->di['api_admin'];
-        $backup = $api->Serviceproxmox_proxmox_backup_config('backup');
+        $api->Serviceproxmox_proxmox_backup_config('backup');
         return $app->redirect('extension/settings/serviceproxmox');
     }
 }

@@ -29,9 +29,9 @@ class Admin extends \Api_Abstract
     /**
      * Get list of servers
      * 
-     * @return array
+     * @return array<mixed>
      */
-    public function server_get_list($data)
+    public function server_get_list()
     {
         // Retrieve all servers from the database
         $servers = $this->di['db']->find('service_proxmox_server');
@@ -98,11 +98,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get list of storage
+     * Get list of storages
      * 
-     * @return array
+     * @return array<mixed>
      */
-    public function storage_get_list($data)
+    public function storage_get_list()
     {
         $storages = $this->di['db']->find('service_proxmox_storage');
         $storages_grouped = array();
@@ -186,8 +186,7 @@ class Admin extends \Api_Abstract
      * 
      * @return array
      */
-
-    public function storageclass_get_list($data)
+    public function storageclass_get_list()
     {
         $storageclasses = $this->di['db']->find('service_proxmox_storageclass');
         return $storageclasses;
@@ -198,7 +197,7 @@ class Admin extends \Api_Abstract
      * 
      * @return array
      */
-    public function storage_controller_get_list($data)
+    public function storage_controller_get_list()
     {
         // Return Array of storage controllers: 	
         // lsi | lsi53c810 | virtio-scsi-pci | virtio-scsi-single | megasas | pvscsi
@@ -218,9 +217,9 @@ class Admin extends \Api_Abstract
     /** *
      * Get list of Active Services
      * 
-     * @return array
+     * @return array<mixed>
      */
-    public function service_proxmox_get_list($data)
+    public function service_proxmox_get_list()
     {
         $services = $this->di['db']->find('service_proxmox');
         return $services;
@@ -229,7 +228,7 @@ class Admin extends \Api_Abstract
     /**
      * Create a new storageclass
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function storageclass_create($data)
     {
@@ -242,7 +241,7 @@ class Admin extends \Api_Abstract
     /**
      * Retrieve a single storageclass
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function storageclass_get($data)
     {
@@ -296,7 +295,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of OS types
      * 
-     * @return array
+     * @return array<mixed>
      */
 
     public function os_get_list()
@@ -322,7 +321,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of BIOS types
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function bios_get_list()
     {
@@ -336,7 +335,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of VNC types
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function lxc_appliance_get_list()
     {
@@ -457,7 +456,7 @@ class Admin extends \Api_Abstract
      * Get server details
      * 
      * @param int $id - server id
-     * @return array
+     * @return array<mixed>
      * 
      * @throws \Box_Exception 
      */
@@ -610,7 +609,7 @@ class Admin extends \Api_Abstract
      * Receive Hardware Data from proxmox server
      *
      * @param int $server_id
-     * @return array
+     * @return array<mixed>
      */
     public function get_hardware_data($server_id)
     {
@@ -765,7 +764,7 @@ class Admin extends \Api_Abstract
     /**
      * Get all available templates from any proxmox server
      * 
-     * @return array
+     * @return array<mixed>
      * @throws \Box_Exception 
      */
     public function pull_lxc_appliances()
@@ -812,7 +811,7 @@ class Admin extends \Api_Abstract
      * 
      * @param int $id - storage id
      * 
-     * @return array
+     * @return array<mixed>
      * @throws \Box_Exception 
      */
     public function storage_get($data)
@@ -834,7 +833,7 @@ class Admin extends \Api_Abstract
             'free'              => $storage->free,
             'percent_used'  => ($storage->size == 0 || $storage->used == 0 || $storage->free == 0) ? 0 : round($storage->used / $storage->size * 100, 2),
             // add list of storage classes
-            'storageclasses'    => $this->storageclass_get_list($data),
+            'storageclasses'    => $this->storageclass_get_list(),
             'server_name'       => $server->name,
         );
 
@@ -847,7 +846,7 @@ class Admin extends \Api_Abstract
      * TODO: Implement & Fix functionality
      * @param int $id - server id
      * 
-     * @return array
+     * @return array<mixed>
      * @throws \Box_Exception 
      */
     public function storage_update($data)
@@ -956,7 +955,7 @@ class Admin extends \Api_Abstract
     /** 
      * Get list of vm templates
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function service_get_vmtemplates()
     {
@@ -967,7 +966,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of qemu templates
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function service_get_qemutemplates()
     {
@@ -978,7 +977,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of lxc templates
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function service_get_lxctemplates()
     {
@@ -989,7 +988,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of ip ranges
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function service_get_ip_ranges()
     {
@@ -1010,7 +1009,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of vlans
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function service_get_vlans()
     {
@@ -1021,7 +1020,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of tags by type
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function service_get_tags($data)
     {
@@ -1038,7 +1037,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of tags by storage id
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function service_get_tags_by_storage($data)
     {
@@ -1050,7 +1049,7 @@ class Admin extends \Api_Abstract
     /**
      * Get a vm configuration templates
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function vm_config_template_get($data)
     {
@@ -1081,7 +1080,7 @@ class Admin extends \Api_Abstract
     /**
      * Function to get storages for vm config template
      * 
-     * @return array
+     * @return array<mixed>
      */
 
     public function vm_config_template_get_storages($data)
@@ -1101,7 +1100,7 @@ class Admin extends \Api_Abstract
     /**
      * Get list of lxc configuration templates
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function lxc_config_template_get($data)
     {
@@ -1131,7 +1130,7 @@ class Admin extends \Api_Abstract
     /**
      * Get ip range
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function ip_range_get($data)
     {
@@ -1472,7 +1471,7 @@ class Admin extends \Api_Abstract
      * Delete ip range
      * 
      * @param  int $id
-     * @return array
+     * @return array<mixed>
      */
     public function ip_range_delete($id)
     {
@@ -1591,7 +1590,7 @@ class Admin extends \Api_Abstract
     /**
      * List existing Backups
      * 
-     * @return array
+     * @return array<mixed>
      */
     public function proxmox_list_backups()
     {
