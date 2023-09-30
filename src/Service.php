@@ -38,7 +38,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	{
 		$this->di = $di;
 	}
-
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
 	use ProxmoxAuthentication;
 	use ProxmoxServer;
 	use ProxmoxVM;

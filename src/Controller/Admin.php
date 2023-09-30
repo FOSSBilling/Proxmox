@@ -130,9 +130,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      * Enables the QEMU Template
      *
      * @param \Box_App $app
-     * @return void
      */
-    public function enable_template(\Box_App $app, $id): void
+    public function enable_template(\Box_App $app, $id)
     {
         $api = $this->di['api_admin'];
         $api->Serviceproxmox_vm_config_template_enable(array('id' => $id));
@@ -143,9 +142,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      * Disables the QEMU Template
      *
      * @param \Box_App $app
-     * @return void
      */
-    public function disable_template(\Box_App $app, $id): void
+    public function disable_template(\Box_App $app, $id)
     {
         $api = $this->di['api_admin'];
         $api->Serviceproxmox_vm_config_template_disable(array('id' => $id));
@@ -265,9 +263,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      * Renders the admin area settings page
      * 
      * @param \Box_App $app
-     * @return void
      */
-    public function start_backup(\Box_App $app):void
+    public function start_backup(\Box_App $app)
     {
 
         $api = $this->di['api_admin'];
