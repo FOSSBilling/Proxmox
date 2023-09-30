@@ -104,10 +104,10 @@ trait ProxmoxAuthentication
 						// Create a new user
 						$userid = 'fb_' . rand(1000, 9999) . '@pve'; // TODO: Make realm configurable in the module settings
 						// $groupid has to be defined because it is set in the switch statement above, otherwise it would throw an exception. $proxmox also, because otherwise, login would fail and break.
-						$proxmox->post("/access/users", array('userid' => $userid, 'password' => $this->di['tools'], 'enable' => 1, 'comment' => 'fossbilling user', 'groups' => $groupid)); /* @php-stan-ignore-line */
+						$proxmox->post("/access/users", array('userid' => $userid, 'password' => $this->di['tools'], 'enable' => 1, 'comment' => 'fossbilling user', 'groups' => $groupid)); /* @phpstan-ignore-line */
 
 						// Create a token for the new user
-						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array()); /* @php-stan-ignore-line Proxmox is set, otherwise code errors out */ 
+						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array()); /* @phpstan-ignore-line Proxmox is set, otherwise code errors out */ 
 
 						// Check if the token was created successfully
 						if ($token) {
@@ -120,7 +120,7 @@ trait ProxmoxAuthentication
 						break;
 					case 1:
 						// Create a token for the existing user
-						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array());/* @php-stan-ignore-line Proxmox is set, otherwise code errors out */ 
+						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array());/* @phpstan-ignore-line Proxmox is set, otherwise code errors out */ 
 						if ($token) {
 							$server->tokenname = $token['full-tokenid'];
 							$server->tokenvalue = $token['value'];
