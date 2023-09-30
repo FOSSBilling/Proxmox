@@ -1,23 +1,126 @@
-name: PHPStan
+name: Build and Test
 
-on: [push]
+on:
+  push:
+    branches: [main, rework-project-structure]
+  pull_request:
+    branches: [main]
 
 jobs:
-  analyze:
-    name: Analyze
+  composer:
     runs-on: ubuntu-latest
-    
+
+    name: PHP (Latest) - Build and Archive
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.0'
-      
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
-    
-    - name: Run PHPStan
-      run: src/vendor/bin/phpstan
+      - uses: actions/checkout@v4
+
+      - name: Validate composer.json and composer.lock
+        uses: php-actions/composer@v6
+        with:
+          command: validate
+
+      - name: Cache Composer Dependencies
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: ./src/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        if: steps.composer-cache.outputs.cache-hit != 'true'
+        uses: php-actions/composer@v6
+
+      - name: Create Build Archive for Tests
+        run: |
+          mkdir /tmp/builds/ && tar -cvf /tmp/builds/build.tar ./
+
+      - name: Upload Build Archive for Tests
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-archive-php
+          path: /tmp/builds
+          retention-days: 1
+
+  phpstan:
+    runs-on: ubuntu-latest
+    needs: [composer]
+
+    name: PHPStan - FOSSBilling Preview
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-archive-php
+          path: /tmp/builds
+
+      - name: Extract build archive
+        run: tar -xvf /tmp/builds/build.tar ./
+
+      - name: Checkout FOSSBilling Source Code
+        uses: actions/checkout@v4
+        with:
+          repository: "FOSSBilling/FOSSBilling"
+          path: "FOSSBilling"
+
+      - name: Install Composer Dependencies
+        uses: php-actions/composer@v6
+        with:
+          args: --working-dir=FOSSBilling
+          dev: no
+
+      - name: Run PHPStan
+        uses: php-actions/phpstan@v3
+        with:
+          php_version: latest
+          configuration: phpstan.neon
+          memory_limit: 512M
+
+  phpstan-release:
+    runs-on: ubuntu-latest
+    needs: [composer]
+
+    name: PHPStan - FOSSBilling Release
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-archive-php
+          path: /tmp/builds
+
+      - name: Extract build archive
+        run: tar -xvf /tmp/builds/build.tar ./
+
+      - name: Get the Latest FOSSBilling Release Tag
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: "FOSSBilling/FOSSBilling"
+          releases-only: true
+        id: get_id
+
+      - name: Checkout The Release tag
+        uses: actions/checkout@v4
+        with:
+          repository: "FOSSBilling/FOSSBilling"
+          path: "FOSSBilling"
+          ref: ${{ steps.get_id.outputs.tag }}
+
+      - name: Install Composer Dependencies (<=0.4.x)
+        if: ${{ hashFiles('FOSSBilling/src/composer.json') }}
+        uses: php-actions/composer@v6
+        with:
+          args: --working-dir=FOSSBilling/src
+          dev: no
+
+      - name: Install Composer Dependencies (>=0.5.0)
+        if: ${{ hashFiles('FOSSBilling/composer.json') }}
+        uses: php-actions/composer@v6
+        with:
+          args: --working-dir=FOSSBilling/
+          dev: no
+
+      - name: Run PHPStan
+        uses: php-actions/phpstan@v3
+        with:
+          php_version: latest
+          configuration: phpstan.neon
+          memory_limit: 512M
