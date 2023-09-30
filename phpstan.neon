@@ -5,3 +5,5 @@ parameters:
     treatPhpDocTypesAsCertain: false
     scanDirectories:
         - ../../
+    excludePaths:
+        - src/vendor
