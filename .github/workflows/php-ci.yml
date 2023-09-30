@@ -126,6 +126,14 @@ jobs:
           args: --working-dir=FOSSBilling/
           dev: no
 
+      - name: Create Build Archive for Tests
+        run: |
+          cp FOSSBilling/src/config-sample.php FOSSBilling/src/config.php
+          mkdir -p FOSSBilling/src/data/cache
+          mkdir -p FOSSBilling/src/data/log
+          echo > FOSSBilling/src/data/log/license.log
+          echo > FOSSBilling/src/data/log/application.log
+          echo > FOSSBilling/src/data/log/php_error.log
       - name: Run PHPStan
         uses: php-actions/phpstan@v3
         with:
