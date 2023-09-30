@@ -69,11 +69,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		$finder = new Finder();
 
 		// check if pmxconfig folder exists
-		if (!$filesystem->exists(PATH_ROOT . '/pmxconfig')) { /* @phpstan-ignore-line */
-			$filesystem->mkdir(PATH_ROOT . '/pmxconfig');/* @phpstan-ignore-line */
+		if (!$filesystem->exists(PATH_ROOT . '/pmxconfig')) {
+			$filesystem->mkdir(PATH_ROOT . '/pmxconfig');
 		}
 
-		$pmxbackup_dir = $finder->in(PATH_ROOT . '/pmxconfig')->files()->name('proxmox_uninstall_*.sql');/* @phpstan-ignore-line */
+		$pmxbackup_dir = $finder->in(PATH_ROOT . '/pmxconfig')->files()->name('proxmox_uninstall_*.sql');
 
 		// find newest file in pmxbackup_dir according to timestamp
 		$pmxbackup_file = array();
@@ -87,7 +87,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// if pmxbackup_file is not empty, restore the sql dump to database
 		if (!empty($pmxbackup_file)) {
 			// Load the backup
-			$dump = file_get_contents(PATH_ROOT . '/pmxconfig/' . $pmxbackup_file);/* @phpstan-ignore-line */
+			$dump = file_get_contents(PATH_ROOT . '/pmxconfig/' . $pmxbackup_file);
 
 			// Check if dump is not empty
 			if (!empty($dump)) {
@@ -321,7 +321,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		);
 
 		foreach ($tables as $table) {
-			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'";/* @phpstan-ignore-line */
+			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'";
 			$result = $this->di['db']->query($sql);
 			$row = $result->fetch();
 			// check if version is the same as current version
@@ -344,7 +344,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// create backup of all Proxmox tables
 		try {
 			$filesystem = new Filesystem();
-			$filesystem->mkdir([PATH_ROOT . '/pmxconfig'], 0750);/* @phpstan-ignore-line */
+			$filesystem->mkdir([PATH_ROOT . '/pmxconfig'], 0750);
 		} catch (IOException $e) {
 			error_log($e->getMessage());
 			throw new \Box_Exception('Unable to create directory pmxconfig');
@@ -419,7 +419,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			}
 
 			// Save to file
-			$handle = fopen(PATH_ROOT . $filename, 'w+');/* @phpstan-ignore-line */
+			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
 			fclose($handle);
 			// create PDO instance
@@ -476,7 +476,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			}
 
 			// Save to file
-			$handle = fopen(PATH_ROOT . $filename, 'w+');/* @phpstan-ignore-line */
+			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
 			fclose($handle);
 		} catch (Exception $e) {
@@ -488,7 +488,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		$current_version = $manifest['version'];
 		// add version comment to backup file
 		$version_comment = '-- Proxmox module version: ' . $current_version . "\n";
-		$filename = PATH_ROOT . $filename;/* @phpstan-ignore-line */
+		$filename = PATH_ROOT . $filename;
 		$handle = fopen($filename, 'r+');
 		$len = strlen($version_comment);
 		$final_len = filesize($filename) + $len;
@@ -515,7 +515,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	 */
 	public function pmxbackuplist()
 	{
-		$files = glob(PATH_ROOT . '/pmxconfig/*.sql');/* @phpstan-ignore-line */
+		$files = glob(PATH_ROOT . '/pmxconfig/*.sql');
 		$backups = array();
 		foreach ($files as $file) {
 			$backups[] = basename($file);
@@ -536,7 +536,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
 		$version = $manifest['version'];
 		//if the file exists, restore it
-		$dump = file_get_contents(PATH_ROOT . '/pmxconfig/' . $data['backup']);/* @phpstan-ignore-line */
+		$dump = file_get_contents(PATH_ROOT . '/pmxconfig/' . $data['backup']);
 		// check if dump is not empty
 		if (!empty($dump)) {
 			// check version number in first line of dump format: 
