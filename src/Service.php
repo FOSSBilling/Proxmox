@@ -136,7 +136,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 					} else {
 						throw new \Box_Exception("The version number of the sql dump is bigger than the current version number of the module. Please check the installed Module version.", null, 9684);
 					}
-				} catch (Box_Exception $e) {
+				} catch (\Box_Exception $e) {
 					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
 				}
 			}
@@ -480,7 +480,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
 			fclose($handle);
-		} catch (Box_Exception $e) {
+		} catch (\Box_Exception $e) {
 			throw new \Box_Exception('Error during backup process: ' . $e->getMessage());
 		}
 
@@ -571,7 +571,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 					}
 
 					return true;
-				} catch (Box_Exception $e) {
+				} catch (\Box_Exception $e) {
 					throw new \Box_Exception('Error during restoration process: ' . $e->getMessage());
 				}
 			} else {
