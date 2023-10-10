@@ -195,6 +195,9 @@ jobs:
           echo > FOSSBilling/src/data/log/license.log
           echo > FOSSBilling/src/data/log/application.log
           echo > FOSSBilling/src/data/log/php_error.log
+
+      - name: Copy module to FOSSBilling directory 
+        run: cp -r src/ FOSSBilling/src/modules/Serviceproxmox
       
       - name: Copy tests to FOSSBilling directory 
         run: cp -r tests/Serviceproxmox FOSSBilling/tests/modules/
