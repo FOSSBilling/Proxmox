@@ -196,6 +196,14 @@ jobs:
           echo > FOSSBilling/src/data/log/application.log
           echo > FOSSBilling/src/data/log/php_error.log
       
-      - name: list files 
-        run: ls -alh ./
+      - name: Copy tests to FOSSBilling directory 
+        run: cp -r tests/Serviceproxmox FOSSBilling/tests/modules/
 
+      - name: Run PHPUnit Tests
+        uses: php-actions/phpunit@v3
+        with:
+          version: 9
+          php_version: ${{ matrix.php }}
+          configuration: FOSSBilling/phpunit.xml.dist
+        env:
+          APP_ENV: test
