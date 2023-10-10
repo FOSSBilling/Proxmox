@@ -38,6 +38,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	{
 		$this->di = $di;
 	}
+	
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
