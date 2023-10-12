@@ -177,12 +177,11 @@
     
       function saveTagToDatabase(tag, callback) {
          var Type = "storage";
-         API.admin.post("serviceproxmox/service_add_tag", { type: Type, tag: tag }, function (response) {
-             console.log('Tag saved successfully:', response.tag);
+         API.admin.post("serviceproxmox/service_add_tag", { type: Type, tag: tag }, (response) => {
              if (callback) {
-                 callback(response.tag);
+                 callback(response);
              }
-         }, function (error) {
+         }, (error) => {
              console.log('Error occurred while saving tag: ' + error);
          }, false);
      }

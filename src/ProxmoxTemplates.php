@@ -90,7 +90,6 @@ trait ProxmoxTemplates
 		// $data contains 'type' and 'tag' 
 		
 		// search if the tag already exists
-		error_log('saving tag: ' . print_r($data));
 		$tag_exists = $this->di['db']->findOne('service_proxmox_tag', 'type=:type AND name=:name', array(':type' => $data['type'], ':name' => $data['tag']));
 		// and if not create it
 		if (!$tag_exists) {
@@ -98,9 +97,10 @@ trait ProxmoxTemplates
 			$model->type = $data['type'];
 			$model->name = $data['tag'];
 			$this->di['db']->store($model);
+			// return the tag that was just created.
 			return $model;
 		}
-		// return the tag that was just created
+		// return the tag that already exists
 		return $tag_exists;
 	}
 		
@@ -114,8 +114,13 @@ trait ProxmoxTemplates
 		$storage = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['storageid']));
 		// return tags (saved in json format in $storage->storageclass) (F.ex ["ssd","hdd"])
 		// as well as the service_proxmox_tag id for each tag so there is a key value pair with id and name.
-		
-		$tags = json_decode($storage->storageclass, true);
+		// check if $storage->storageclass is not empty
+		if (empty($storage->storageclass)) {
+			// if empty return empty array
+			$tags = "";
+		} else {
+			$tags = json_decode($storage->storageclass, true);
+		}
 		return $tags;
 
 		

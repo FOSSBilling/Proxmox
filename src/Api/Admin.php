@@ -1030,8 +1030,9 @@ class Admin extends \Api_Abstract
 
     public function service_add_tag($data)
     {
-        $output = $this->getService()->save_tag($data);
-        return $output;
+        $added_tag = $this->getService()->save_tag($data);
+        return $added_tag;
+        
     }
 
     /**
