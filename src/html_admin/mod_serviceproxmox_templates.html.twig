@@ -107,7 +107,7 @@
                                 {% set statusClass = 'badge bg-danger' %}
                               {% endif %}
                               
-                              <span class="{{ statusClass }}">
+                              <span class="{{ statusClass }}" style="color: #FFF;">
                                 {{ template.state|capitalize }}
                               </span> 
                             </td>
@@ -337,7 +337,7 @@
                                                     <td>Storage Type</td>
                                                     <td>Size (GB)</td>
                                                     <td>Controller</td>
-                                                    <th class="w-1"></th>
+                                                    <td class="w-1"></td>
                                                 </th>
                                             </thead>
                                             <tbody id='template-storage-list'>
@@ -797,79 +797,75 @@
             )};
 
         function updateStorageTable(){
-            // check if the element with id 'vm_config_template_id' exists
-            if (!document.getElementById('vm_config_template_id') == null) {
-                // if not, get value of the element
-                var template_id = document.getElementById('vm_config_template_id').value;      
-            }
+            var template_id = document.getElementById('vm_config_template_id');      
             // run axaj call to vm_config_template_get_storages with the template id
-            console.log('template id: '+template_id);
+            console.log('template id: '+template_id.value);
             $.ajax({
                 url: '/index.php?_url=/api/admin/serviceproxmox/vm_config_template_get_storages', // Replace with the actual URL to your server-side endpoint
                 method: 'POST', // or 'GET', depending on your server-side implementation
-                data: { id: template_id, 
+                data: { id: template_id.value, 
                 CSRFToken: "{{ CSRFToken }}"
                 },
                 success: function(response) {
-                    response.result.forEach(function(vm_config_template_storage) {
-                        // create a new row in the table <tbody id='template-storage-list'>
-                        var row = document.createElement("tr");
-                        row.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage.id);
-                        document.getElementById("template-storage-list").appendChild(row);
-                        // create a new cell in the row with the storage type
-                        var cell = document.createElement("td");
-                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage.id + "-storage-name");
-                        cell.innerHTML = vm_config_template_storage.storage_type;
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id).appendChild(cell);
-                        // create a new cell in the row with the storage size
-                        var cell = document.createElement("td");
-                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage.id + "-storage-size");
-                        cell.innerHTML = vm_config_template_storage.storage_size;
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id).appendChild(cell);
-                        // create a new cell in the row with the storage controller
-                        var cell = document.createElement("td");
-                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage.id + "-storage-controller");
-                        cell.innerHTML = vm_config_template_storage.controller;
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id).appendChild(cell);
-                        // create a new cell in the row with actions (edit, delete)
-                        var cell = document.createElement("td");
-                        cell.setAttribute("id", "template-storage-list-row-" + vm_config_template_storage.id + "-storage-actions");
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id).appendChild(cell);
-                        // create a new button in the cell with the edit action
-                        /* Example: 
-                                                        <a class="btn btn-icon" href="{{ '/serviceproxmox/templates/vm_config'|alink }}/{{ template.id }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                                */
+                    var resp = response
+                    console.log(response.result);
+                    // create a new row in the table <tbody id='template-storage-list'>
+                    var row = document.createElement("tr");
+                    row.setAttribute("id", "template-storage-list-row-" + response.result.id);
+                    document.getElementById("template-storage-list").appendChild(row);
+                    // create a new cell in the row with the storage type
+                    var cell = document.createElement("td");
+                    cell.setAttribute("id", "template-storage-list-row-" + response.result.id + "-storage-name");
+                    cell.innerHTML = response.result.storage_type;
+                    document.getElementById("template-storage-list-row-" + response.result.id).appendChild(cell);
+                    // create a new cell in the row with the storage size
+                    var cell = document.createElement("td");
+                    cell.setAttribute("id", "template-storage-list-row-" + response.result.id + "-storage-size");
+                    cell.innerHTML = response.result.storage_size;
+                    document.getElementById("template-storage-list-row-" + response.result.id).appendChild(cell);
+                    // create a new cell in the row with the storage controller
+                    var cell = document.createElement("td");
+                    cell.setAttribute("id", "template-storage-list-row-" + response.result.id + "-storage-controller");
+                    cell.innerHTML = response.result.controller;
+                    document.getElementById("template-storage-list-row-" + response.result.id).appendChild(cell);
+                    // create a new cell in the row with actions (edit, delete)
+                    var cell = document.createElement("td");
+                    cell.setAttribute("id", "template-storage-list-row-" + response.result.id + "-storage-actions");
+                    document.getElementById("template-storage-list-row-" + response.result.id).appendChild(cell);
+                    // create a new button in the cell with the edit action
+                    /* Example: 
+                                                    <a class="btn btn-icon" href="{{ '/serviceproxmox/templates/vm_config'|alink }}/{{ template.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            */
 
-                        var button = document.createElement("a");
-                        button.setAttribute("class", "btn btn-icon");
-                        button.setAttribute("href", "/index.php?_url=/admin/serviceproxmox/vm_config_template_storage_edit/" + vm_config_template_storage.id);
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id + "-storage-actions").appendChild(button);
-                        // create a new svg in the button
-                        var svg = document.createElement("svg");
-                        svg.setAttribute("class", "icon");
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id + "-storage-actions").appendChild(svg);
-                        // create a new use in the svg
-                        var use = document.createElement("use");
-                        use.setAttribute("xlink:href", "#edit");
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id + "-storage-actions").appendChild(use);
-                        // create a new button in the cell with the delete action
-                        var button = document.createElement("a");
-                        button.setAttribute("class", "btn btn-icon");
-                        button.setAttribute("href", "/index.php?_url=/admin/serviceproxmox/vm_config_template_storage_delete/" + vm_config_template_storage.id);
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id + "-storage-actions").appendChild(button);
-                        // create a new svg in the button
-                        var svg = document.createElement("svg");
-                        svg.setAttribute("class", "icon");
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id + "-storage-actions").appendChild(svg);
-                        // create a new use in the svg
-                        var use = document.createElement("use");
-                        use.setAttribute("xlink:href", "#delete");
-                        document.getElementById("template-storage-list-row-" + vm_config_template_storage.id + "-storage-actions").appendChild(use);
-                    });
+                    var button = document.createElement("a");
+                    button.setAttribute("class", "btn btn-icon");
+                    button.setAttribute("href", "/index.php?_url=/admin/serviceproxmox/response.result_edit/" + response.result.id);
+                    document.getElementById("template-storage-list-row-" + response.result.id + "-storage-actions").appendChild(button);
+                    // create a new svg in the button
+                    var svg = document.createElement("svg");
+                    svg.setAttribute("class", "icon");
+                    document.getElementById("template-storage-list-row-" + response.result.id + "-storage-actions").appendChild(svg);
+                    // create a new use in the svg
+                    var use = document.createElement("use");
+                    use.setAttribute("xlink:href", "#edit");
+                    document.getElementById("template-storage-list-row-" + response.result.id + "-storage-actions").appendChild(use);
+                    // create a new button in the cell with the delete action
+                    var button = document.createElement("a");
+                    button.setAttribute("class", "btn btn-icon");
+                    button.setAttribute("href", "/index.php?_url=/admin/serviceproxmox/response.result_delete/" + response.result.id);
+                    document.getElementById("template-storage-list-row-" + response.result.id + "-storage-actions").appendChild(button);
+                    // create a new svg in the button
+                    var svg = document.createElement("svg");
+                    svg.setAttribute("class", "icon");
+                    document.getElementById("template-storage-list-row-" + response.result.id + "-storage-actions").appendChild(svg);
+                    // create a new use in the svg
+                    var use = document.createElement("use");
+                    use.setAttribute("xlink:href", "#delete");
+                    document.getElementById("template-storage-list-row-" + response.result.id + "-storage-actions").appendChild(use);
                 },
                 error: function(response) {
                     // Handle error
