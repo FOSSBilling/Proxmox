@@ -393,7 +393,7 @@
 </style>
     <script>
 
-      function updateStorageTable() {
+        function updateStorageTable() {
             const templateIdElem = document.getElementById('vm_config_template_id');
         
             if (!templateIdElem) {
@@ -402,51 +402,83 @@
             }
         
             const templateId = templateIdElem.value;
-            console.log('tmplid: ' + templateId);
         
             API.admin.post(
                 'serviceproxmox/vm_config_template_get_storages',
                 { id: templateId },
-                populateTableWithJQuery,
+                populateTable,
                 handleError
             );
+        }
 
-            
+
+        function deleteStorage(storageId) {
+            API.admin.post(
+                'serviceproxmox/vm_config_template_delete_storage',
+                { id: storageId },
+                () => {
+                    updateStorageTable(); // Update the table after deletion
+                },
+                handleError
+            );
+        }
+
+
+        function populateTable(response) {
+            const tableBody = document.getElementById("template-storage-list");
+            tableBody.innerHTML = '';
+            for (let key in response) {
+                if (response.hasOwnProperty(key)) {
+                    const storageData = response[key];
+                    const row = document.createElement("tr");
+                    row.id = "template-storage-list-row-" + storageData.id;
+                    tableBody.appendChild(row);
+        
+                    // Append empty cell to match table header.
+                    row.appendChild(document.createElement("td"));
+        
+                    appendCellToRow(row, storageData.id, "storage-name", storageData.storage_type);
+                    appendCellToRow(row, storageData.id, "storage-size", storageData.size + " GB");
+                    appendCellToRow(row, storageData.id, "storage-controller", storageData.controller);
+        
+                    const actionsCell = appendCellToRow(row, storageData.id, "storage-actions", "");
+                    appendActionButton(actionsCell, "edit", storageData.id);
+                    appendActionButton(actionsCell, "delete", storageData.id);
+                }
+            }
         }
         
-        function populateTableWithJQuery(response) {
-    const $tableBody = $("#template-storage-list");
-    $tableBody.empty(); // clear any existing rows
-
-    $.each(response, function(index, storageData) {
-        const $row = $("<tr>").attr("id", "template-storage-list-row-" + storageData.id);
+        function appendCellToRow(row, storageId, suffix, content) {
+            const cell = document.createElement("td");
+            cell.id = `template-storage-list-row-${storageId}-${suffix}`;
+            cell.innerHTML = content;
+            row.appendChild(cell);
+            return cell;
+        }
         
-        $row.append($("<td>"));  // Empty cell to match table header
-
-        $row.append($("<td>").text(storageData.storage_type));
-        $row.append($("<td>").text(storageData.size + " GB"));
-        $row.append($("<td>").text(storageData.controller));
-
-        const $actionsCell = $("<td>");
-        $actionsCell.append(createActionButton("edit", "/admin/serviceproxmox/vm_config_template_storage/edit/" + storageData.id));
-        $actionsCell.append(createActionButton("delete", "/admin/serviceproxmox/vm_config_template_storage/delete/" + storageData.id));
-
-        $row.append($actionsCell);
-
-        $tableBody.append($row);
-    });
-}
-
-function createActionButton(actionType, href) {
-    const $button = $("<a>").addClass("btn btn-icon").attr("href", href);
-    const $svg = $("<svg>").addClass("icon");
-    const $use = $("<use>").attr("xlink:href", `#${actionType}`);
-
-    $svg.append($use);
-    $button.append($svg);
-
-    return $button;
-}
+        function appendActionButton(cell, actionType, storageId) {
+            const button = document.createElement("a");
+            button.className = "btn btn-icon";
+        
+            // If the actionType is "delete", attach an event to handle the deletion.
+            if (actionType === "delete") {
+                button.href = "javascript:void(0)"; // Make sure the link doesn't navigate anywhere
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    deleteStorage(storageId);
+                });
+            } else {
+                button.href = `/admin/serviceproxmox/vm_config_template_storage_edit/${storageId}`;
+            }
+        
+            cell.appendChild(button);
+        
+            const img = document.createElement("img");
+            img.className = "icon";
+            img.src = `assets/icons/${actionType}.svg`;
+            img.alt = `${actionType} icon`; // For accessibility
+            button.appendChild(img);
+        }
         
         function handleError(error) {
             console.error("API Error:", error);
@@ -463,7 +495,6 @@ function createActionButton(actionType, href) {
 
             //prepare the data for the ajax call: template id in the hidden input with id vm_config_template_id
             var template_id_v = document.getElementById('vm_config_template_id');
-            console.log('templ.id '+template_id_v.value);
             // storage size from the input with name=storage_size, not id
             var storage_size_v = document.getElementById('storage_size');
             //storage controller from the select named controller 
@@ -476,7 +507,7 @@ function createActionButton(actionType, href) {
             // Call the API
 
             API.admin.post('serviceproxmox/vm_config_template_storage_create', data , (response) => {
-                updateStorageTable(response)
+                updateStorageTable()
             }, (response) => {
                 // Handle error
                 console.log(response);
@@ -536,48 +567,10 @@ function createActionButton(actionType, href) {
                     callback(options);
                 },
                 error: function(xhr, status, error) {
-                    // Handle the error response
-                    console.log('Error occurred while saving tags: ' + error);
-                    // Call the callback function with an empty array
                     callback(options);
                 }
             });
         }
-{#         function getTagsForType(Type) {
-            // Create the AJAX request
-            
-        } #}
-        // add an event listener to the Add storage tab button
-{#         var tabNewVmStorageBtn = document.getElementById('tab-new-vm-storage-btn');
-        tabNewVmStorageBtn.addEventListener('click', function(event) {
-            // run the getTagsForType function with the type "storage"
-            getTagsForType("storage");
-        }); #}
-                function saveTagsToDatabase() {
-            // Retrieve the selected tags
-            var selectedTags = $('#storageTypeTags[]').val();
-        
-            // Create the AJAX request
-            $.ajax({
-                url: '/your-endpoint-url', // Replace with the actual URL for your backend endpoint
-                method: 'POST', // or 'GET', depending on your backend implementation
-                data: {
-                    tags: selectedTags
-                },
-                success: function(response) {
-                    // Handle the success response
-                    console.log('Tags saved successfully!');
-                },
-                error: function(xhr, status, error) {
-                    // Handle the error response
-                    console.log('Error occurred while saving tags: ' + error);
-                }
-            });
-        }
-
-
-        
-
 
     </script>
 
