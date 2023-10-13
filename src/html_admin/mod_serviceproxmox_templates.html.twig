@@ -98,7 +98,6 @@
                         <tr>
                             <td>
                                 {{ template.name }} - 
-                                <!-- add pill with status of template: draft = grey, active = green, inactive = red -->
                                 {% if template.state == 'draft' %}
                                 {% set statusClass = 'badge bg-secondary' %}
                               {% elseif template.state == 'active' %}
@@ -216,8 +215,6 @@
                             <label class="form-label col-3 col-form-label">
                                 {{ 'Ballooing Memory Size' | trans }}:                                                                                    
                             </label>
-                            <!-- disable this if ballooning is not enabled -->
-                        
                             <div class="col-md-5">
                                     <input class="form-range" type="range" name="balloon_size" value="1" min="1" max="128" step="1" oninput="memoryOutput.value = this.value+' GB';">
                             </div>
@@ -231,9 +228,7 @@
                             <label class="form-label col-3 col-form-label">
                                 {{ 'OS' | trans }}:
                             </label>
-                            <!-- get os_list from the api -->
                             {% set os_list = admin.serviceproxmox_os_get_list() %}
-                            <!-- dropdown menu with all available OS from constants provided by the module -->
                             <div class="col">
                                 <select class="form-select" name="os">
                                     {% for os in os_list %}
@@ -246,9 +241,7 @@
                             <label class="form-label col-3 col-form-label">
                                 {{ 'Bios Type' | trans }}:
                             </label>
-                            <!-- get bios_list from the api -->
                             {% set bios_list = admin.serviceproxmox_bios_get_list() %}
-                            <!-- dropdown menu with all available BIOS from constants provided by the module -->
                             <div class="col">
                                 <select class="form-select" name="bios">
                                     {% for bios in bios_list %}
@@ -546,8 +539,6 @@
                         <label class="form-label col-3 col-form-label">
                             {{ 'OS Template' | trans }}:
                         </label>
-                        <!-- get os_list from the api -->
-                        <!-- dropdown menu with all available OS from constants provided by the module -->
                         <div class="col">
                             <select class="form-select" name="ostemplate">
                                 {% for lxc_appliance in lxc_appliances %}
@@ -704,7 +695,6 @@
 {% block js %}
     <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
     <script>
-        // hide the div 'balloon-size' if the the select 'balloon-yes' is checked
         var balloonyes = document.getElementById('radioBalloonYes');
         var balloono = document.getElementById('radioBalloonNo');
         var balloon_size = document.getElementById('balloon-size');
@@ -715,174 +705,158 @@
                 document.getElementById('balloon-size').hidden = false;
             } else if (!document.getElementById('radioBalloonYes').checked && document.getElementById('radioBalloonNo').checked) {
                 document.getElementById('balloon-size').hidden = true;
-            }  }
-        );
+            }
+        });
         document.getElementById('radioBalloonNo').addEventListener('click', function() {
             if (document.getElementById('radioBalloonYes').checked && !document.getElementById('radioBalloonNo').checked) {
                 document.getElementById('balloon-size').hidden = false;
             } else if (!document.getElementById('radioBalloonYes').checked && document.getElementById('radioBalloonNo').checked) {
                 document.getElementById('balloon-size').hidden = true;
-            }  }
-        )
-    
-        // Add event listener to the Template Name Field
-        document.getElementById('vm-template-name').addEventListener('change', function() {
-            // Save the template as draft
+            }
+        })
 
-            // check if the template id is already in the form
+        document.getElementById('vm-template-name').addEventListener('change', function() {
+
             if (document.getElementById('vm-template-id') == null) {
-                // if not, create a new input field with the vm config template id
                 saveTemplateAsDraft();
             }
         });
 
         document.getElementById('add-storage-btn').addEventListener('click', function() {
-            // Save the storage configuration
             saveStorage();
         });
 
-        // function to save storage configuration
-        function saveStorage(){
+        function saveStorage() {
 
-            //prepare the data for the ajax call: template id in the hidden input with id vm_config_template_id
             var template_id_v = document.getElementById('vm_config_template_id');
-            // storage size from the input with name=storage_size, not id
             var storage_size_v = document.getElementById('storage_size');
-            //storage controller from the select named controller 
             var storage_controller_v = document.getElementById('controller');
-            // storage type tags from the input with id storageTypeTags
             var storage_type_tags_v = document.getElementById('storageTypeTags');
 
-            // Build the data for the API call
-            var data = { template_id: template_id_v.value, storage_size: storage_size_v.value, storage_controller: storage_controller_v.value, storage_type_tags: storage_type_tags_v.value };
-            // Call the API
+            var data = {
+                template_id: template_id_v.value,
+                storage_size: storage_size_v.value,
+                storage_controller: storage_controller_v.value,
+                storage_type_tags: storage_type_tags_v.value
+            };
 
-            API.admin.post('serviceproxmox/vm_config_template_storage_create', data , (response) => {
+            API.admin.post('serviceproxmox/vm_config_template_storage_create', data, (response) => {
                 updateStorageTable()
             }, (response) => {
-                // Handle error
-                console.log(response);
+                console.log('Error occurred while saving storage: ' + response);
             });
 
-
-            
         }
-            
 
-
-        function saveTemplateAsDraft(template){
-            // get the value of the template name field
+        function saveTemplateAsDraft(template) {
             var template_name = document.getElementById('vm-template-name').value;
-            // create a new vm template via ajax call to the api
-            API.admin.post('serviceproxmox/vm_config_template_create', { name: template_name }, (response) => {
-                    // Add field to the form ('vm-create-form') with vm config template id
+            API.admin.post('serviceproxmox/vm_config_template_create', {
+                    name: template_name
+                }, (response) => {
                     var vm_config_template_new = response;
-                    // create a new input field with the vm config template id
                     var input = document.createElement("input");
                     input.setAttribute("type", "hidden");
                     input.setAttribute("name", "vm_config_template_id");
-                    input.setAttribute("id", "vm_config_template_id");                    
+                    input.setAttribute("id", "vm_config_template_id");
                     input.setAttribute("value", vm_config_template_new.id);
                     document.getElementById("vm-create-form").appendChild(input);
-                    // Modify the form action to the update function
                     document.getElementById("vm-template-name").setAttribute("value", vm_config_template_new.name);
                     document.getElementById("vm-create-form").setAttribute("action", "/index.php?_url=/admin/serviceproxmox/vm_config_template_update/" + vm_config_template_new.id);
                 },
                 error => {
-                    // Handle error
-                    console.log(response);
-                }
-            )};
-            function deleteStorage(storageId) {
-                API.admin.post(
-                    'serviceproxmox/vm_config_template_delete_storage',
-                    { id: storageId },
-                    () => {
-                        updateStorageTable(); // Update the table after deletion
-                    },
-                    handleError
-                );
-            }
-                        
-            function updateStorageTable() {
-                const templateIdElem = document.getElementById('vm_config_template_id');
-            
-                if (!templateIdElem) {
-                    console.error("Element with id 'vm_config_template_id' not found!");
-                    return;
-                }
-            
-                const templateId = templateIdElem.value;
-            
-                API.admin.post(
-                    'serviceproxmox/vm_config_template_get_storages',
-                    { id: templateId },
-                    populateTable,
-                    handleError
-                );
-            }
-            
-            function populateTable(response) {
-                tableBody.innerHTML = '';
-                const tableBody = document.getElementById("template-storage-list");
-                for (let key in response) {
-                    if (response.hasOwnProperty(key)) {
-                        const storageData = response[key];
-                        const row = document.createElement("tr");
-                        row.id = "template-storage-list-row-" + storageData.id;
-                        tableBody.appendChild(row);
-            
-                        // Append empty cell to match table header.
-                        row.appendChild(document.createElement("td"));
-            
-                        appendCellToRow(row, storageData.id, "storage-name", storageData.storage_type);
-                        appendCellToRow(row, storageData.id, "storage-size", storageData.size + " GB");
-                        appendCellToRow(row, storageData.id, "storage-controller", storageData.controller);
-            
-                        const actionsCell = appendCellToRow(row, storageData.id, "storage-actions", "");
-                        appendActionButton(actionsCell, "edit", storageData.id);
-                        appendActionButton(actionsCell, "delete", storageData.id);
+                    console.log('Error occurred while saving storage: ' + response);
                     }
+            )
+        };
+
+        function deleteStorage(storageId) {
+            API.admin.post(
+                'serviceproxmox/vm_config_template_delete_storage', {
+                    id: storageId
+                },
+                () => {
+                    updateStorageTable(); 
+                },
+                handleError
+            );
+        }
+
+        function updateStorageTable() {
+            const templateIdElem = document.getElementById('vm_config_template_id');
+
+            if (!templateIdElem) {
+                console.error("Element with id 'vm_config_template_id' not found!");
+                return;
+            }
+
+            const templateId = templateIdElem.value;
+
+            API.admin.post(
+                'serviceproxmox/vm_config_template_get_storages', {
+                    id: templateId
+                },
+                populateTable,
+                handleError
+            );
+        }
+
+        function populateTable(response) {
+            tableBody.innerHTML = '';
+            const tableBody = document.getElementById("template-storage-list");
+            for (let key in response) {
+                if (response.hasOwnProperty(key)) {
+                    const storageData = response[key];
+                    const row = document.createElement("tr");
+                    row.id = "template-storage-list-row-" + storageData.id;
+                    tableBody.appendChild(row);
+
+                    row.appendChild(document.createElement("td"));
+
+                    appendCellToRow(row, storageData.id, "storage-name", storageData.storage_type);
+                    appendCellToRow(row, storageData.id, "storage-size", storageData.size + " GB");
+                    appendCellToRow(row, storageData.id, "storage-controller", storageData.controller);
+
+                    const actionsCell = appendCellToRow(row, storageData.id, "storage-actions", "");
+                    appendActionButton(actionsCell, "edit", storageData.id);
+                    appendActionButton(actionsCell, "delete", storageData.id);
                 }
             }
-            
-            function appendCellToRow(row, storageId, suffix, content) {
-                const cell = document.createElement("td");
-                cell.id = `template-storage-list-row-${storageId}-${suffix}`;
-                cell.innerHTML = content;
-                row.appendChild(cell);
-                return cell;
+        }
+
+        function appendCellToRow(row, storageId, suffix, content) {
+            const cell = document.createElement("td");
+            cell.id = `template-storage-list-row-${storageId}-${suffix}`;
+            cell.innerHTML = content;
+            row.appendChild(cell);
+            return cell;
+        }
+
+        function appendActionButton(cell, actionType, storageId) {
+            const button = document.createElement("a");
+            button.className = "btn btn-icon";
+
+            if (actionType === "delete") {
+                button.href = "javascript:void(0)"; 
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    deleteStorage(storageId);
+                });
+            } else {
+                button.href = `/admin/serviceproxmox/vm_config_template_storage_edit/${storageId}`;
             }
-            
-            function appendActionButton(cell, actionType, storageId) {
-                const button = document.createElement("a");
-                button.className = "btn btn-icon";
-            
-                // If the actionType is "delete", attach an event to handle the deletion.
-                if (actionType === "delete") {
-                    button.href = "javascript:void(0)"; // Make sure the link doesn't navigate anywhere
-                    button.addEventListener('click', function(event) {
-                        event.preventDefault();
-                        deleteStorage(storageId);
-                    });
-                } else {
-                    button.href = `/admin/serviceproxmox/vm_config_template_storage_edit/${storageId}`;
-                }
-            
-                cell.appendChild(button);
-            
-                const img = document.createElement("img");
-                img.className = "icon";
-                img.src = `assets/icons/${actionType}.svg`;
-                img.alt = `${actionType} icon`; // For accessibility
-                button.appendChild(img);
-            }
-            
-            
-            function handleError(error) {
-                console.error("API Error:", error);
-            }
-            
+
+            cell.appendChild(button);
+
+            const img = document.createElement("img");
+            img.className = "icon";
+            img.src = `assets/icons/${actionType}.svg`;
+            img.alt = `${actionType} icon`; 
+            button.appendChild(img);
+        }
+
+        function handleError(error) {
+            console.error("API Error:", error);
+        }
 
         $(document).ready(function() {
             var Type = "storage";
@@ -890,46 +864,55 @@
                 plugins: ['remove_button'],
                 create: true,
                 delimiter: ',',
-                // Add more options and settings as needed
             });
 
             getTagsForType(Type, function(options) {
-                // Add options to the TomSelect instance
                 select.addOption(options);
             });
 
             updateStorageTable();
         });
+
         function getTagsForType(Type, callback) {
-            // Create the AJAX request
             var options = [];
-            $.ajax({
-                url: '/index.php?_url=/api/admin/serviceproxmox/service_get_tags',
-                method: 'POST',
-                data: {
-                    type: Type,
-                    CSRFToken: '{{ CSRFToken }}'
-                },
-                success: function(response) {
-                    for (var key in response.result) {
-                        if (response.result.hasOwnProperty(key)) {
-                            var option = {
-                                value: response.result[key].id,
-                                text: response.result[key].name
-                            };
-                            options.push(option);
-                        }
+            API.admin.post("serviceproxmox/service_get_tags", {
+                type: Type
+            }, function(response) {
+                for (var key in response) {
+                    if (response.hasOwnProperty(key)) {
+                        var option = {
+                            value: response[key].id,
+                            text: response[key].name
+                        };
+                        options.push(option);
                     }
-                    // Call the callback function with the options array
-                    callback(options);
-                },
-                error: function(xhr, status, error) {
-                    // Handle the error response
-                    console.log('Error occurred while saving tags: ' + error);
-                    // Call the callback function with an empty array
-                    callback(options);
                 }
-            });
+                callback(options);
+            }, function(error) {
+                console.log('Error occurred while getting tags: ' + error);
+                callback(options);
+            }, false);
+        }
+
+        function getTagsForType(Type, callback) {
+            var options = [];
+            API.admin.post("serviceproxmox/service_get_tags", {
+                type: Type
+            }, function(response) {
+                for (var key in response) {
+                    if (response.hasOwnProperty(key)) {
+                        var option = {
+                            value: response[key].id,
+                            text: response[key].name
+                        };
+                        options.push(option);
+                    }
+                }
+                callback(options);
+            }, function(error) {
+                console.log('Error occurred while getting tags: ' + error);
+                callback(options);
+            }, false);
         }
     </script>
 

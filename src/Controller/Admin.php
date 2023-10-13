@@ -109,7 +109,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      * @param \Box_App $app
      * @return string
      */
-    public function get_index(\Box_App $app):string
+    public function get_index(\Box_App $app): string
     {
         $this->di['is_admin_logged'];
         return $app->render('mod_serviceproxmox_index');
@@ -121,7 +121,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      * @param \Box_App $app
      * @return string
      */
-    public function get_templates(\Box_App $app):string
+    public function get_templates(\Box_App $app): string
     {
         return $app->render('mod_serviceproxmox_templates');
     }
@@ -253,7 +253,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function get_vm_config_template(\Box_App $app, $id): string
     {
-        error_log("Controller get_vm_config_template");
         $api = $this->di['api_admin'];
         $vm_config_template = $api->Serviceproxmox_vm_config_template_get(array('id' => $id));
         return $app->render('mod_serviceproxmox_templates_qemu', array('vm_config_template' => $vm_config_template));

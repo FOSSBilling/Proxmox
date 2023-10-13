@@ -33,22 +33,56 @@ use PDOException;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
 	protected $di;
-
+	private $pdo;
 	public function setDi(\Pimple\Container|null $di): void
 	{
 		$this->di = $di;
 	}
-	
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
+
+	public function getDi(): ?\Pimple\Container
+	{
+		return $this->di;
+	}
 	use ProxmoxAuthentication;
 	use ProxmoxServer;
 	use ProxmoxVM;
 	use ProxmoxTemplates;
 	use ProxmoxIPAM;
 
+
+	/**
+	 * Returns a PDO instance for the database connection.
+	 *
+	 * @return PDO The PDO instance.
+	 */
+	private function getPdo(): PDO
+	{
+		if (!$this->pdo) {
+			// Get db config
+			$db_user = $this->di['config']['db']['user'];
+			$db_password = $this->di['config']['db']['password'];
+			$db_name = $this->di['config']['db']['name'];
+
+			// Create PDO instance
+			$this->pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
+			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		}
+
+		return $this->pdo;
+	}
+
+
+	/**
+	 * Fetches all tables in the database that start with 'service_proxmox'.
+	 *
+	 * @return array An array of table names.
+	 */
+	private function fetchServiceProxmoxTables(): array
+	{
+		$pdo = $this->getPdo();
+		$stmt = $pdo->query("SHOW TABLES LIKE 'service_proxmox%'");
+		return $stmt->fetchAll(PDO::FETCH_COLUMN);
+	}
 	/**
 	 * Method to install module. In most cases you will provide your own
 	 * database table or tables to store extension related data.
@@ -68,10 +102,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
 		// check if there is a sqldump backup with "uninstall" in it's name in the pmxconfig folder, if so, restore it
 		$filesystem = new Filesystem();
-		// list content of pmxconfig folder using symfony finder
 		$finder = new Finder();
-
-		// check if pmxconfig folder exists
 		if (!$filesystem->exists(PATH_ROOT . '/pmxconfig')) {
 			$filesystem->mkdir(PATH_ROOT . '/pmxconfig');
 		}
@@ -102,16 +133,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				$dump_version = str_replace('-- Proxmox module version: ', '', $version_line);
 				$dump = str_replace($version_line . "\n", '', $dump);
 
-				// Get db config
-				$db_user = $this->di['config']['db']['user'];
-				$db_password = $this->di['config']['db']['password'];
-				$db_name = $this->di['config']['db']['name'];
 
 				try {
-					// Create PDO instance
-					$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
-					$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+					// Retrieve PDO instance
+					$pdo = $this->getPdo();
 					// If version number in dump is smaller than current version number, restore dump and run upgrade function
 					if ($dump_version < $version) {
 						// Split the dump into an array by each sql command
@@ -189,15 +214,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				error_log('PDO Exception: ' . $e->getMessage());
 				exit(1);
 			}
-
-
-			// Create table for vm 
 		}
-		// add default values to module config table:
-		// cpu_overprovisioning, ram_overprovisioning, storage_overprovisioning, avoid_overprovision, no_overprovision, use_auth_tokens
-		// example: $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
+
 		$extensionService = $this->di['mod_service']('extension');
-		$extensionService->setConfig(['ext' => 'mod_serviceproxmox', 'cpu_overprovisioning' => '1', 'ram_overprovisioning' => '1', 'storage_overprovisioning' => '1', 'avoid_overprovision' => '0', 'no_overprovision' => '1', 'use_auth_tokens' => '1']);
+		$extensionService->setConfig(['ext' => 'mod_serviceproxmox', 'cpu_overprovisioning' => '1', 'ram_overprovisioning' => '1', 'storage_overprovisioning' => '1', 'avoid_overprovision' => '0', 'no_overprovision' => '1', 'use_auth_tokens' => '1', 'pmx_debug_logging' =>'0']);
 
 
 		return true;
@@ -212,29 +232,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 	 */
 	public function uninstall(): bool
 	{
-		$this->pmxdbbackup('uninstall');
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_server`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_users`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_storage`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_templates`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_vms`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_vm_config_template`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_vm_storage_template`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_vm_network_template`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_lxc_appliance`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_storageclass`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_client_network`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_ip_networks`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_ip_range`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_client_vlan`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_lxc_config_template`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_lxc_network_template`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_lxc_storage_template`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_qemu_template`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_ipam_settings`");
-		$this->di['db']->exec("DROP TABLE IF EXISTS `service_proxmox_ipadress`");
+		// Retrieve PDO instance
+		$pdo = $this->getPdo();
+		$tables = $this->fetchServiceProxmoxTables();
 
+		foreach ($tables as $table) {
+			$pdo->exec("DROP TABLE IF EXISTS `$table`");
+		}
 		return true;
 	}
 
@@ -258,56 +262,45 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			return version_compare(basename($a, '.sql'), basename($b, '.sql'));
 		});
 
-		// Get db config
-		$db_user = $this->di['config']['db']['user'];
-		$db_password = $this->di['config']['db']['password'];
-		$db_name = $this->di['config']['db']['name'];
-
-		// Create PDO instance
-		$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
-		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		// Retrieve PDO instance
+		$pdo = $this->getPdo();
 
 		foreach ($migrations as $migration) {
 			// get version from filename
-			// log to debug.log
-			error_log('found migration: ' . $migration);
+			error_log('Found migration: ' . $migration);
 			$filename = basename($migration, '.sql');
 			$version = str_replace('_', '.', $filename);
 
-			// check if version is between previous and current version
-			error_log('version: ' . $version . ' previous_version: ' . $previous_version . ' current_version: ' . $current_version);
-
-			// Apply migration if version is larger than previous version and smaller or equal to current version
-			error_log('version_compare: ' . version_compare($version, $previous_version, '>') . ' version_compare2: ' . version_compare($version, $current_version, '<='));
-
 			if (version_compare($version, $previous_version, '>') && version_compare($version, $current_version, '<=')) {
-				error_log('applying migration: ' . $migration);
+				error_log('Applying migration: ' . $migration);
 
 				// run migration
 				$migration_sql = file_get_contents($migration);
 				$pdo->exec($migration_sql);
+			} else {
+				error_log('Skipping migration: ' . $migration);
 			}
 		}
 
 		return true;
 	}
 
-    /**
-     * Method to update module. When you release new version to
-     * extensions.fossbilling.org then this method will be called
-     * after the new files are placed.
-     *
-     * @param array $manifest - information about the new module version
-     *
-     * @return bool
-     *
-     * @throws \Box_Exception
-     */
-    public function update(array $manifest): bool
-    {
-        // throw new \Box_Exception("Throw exception to terminate module update process with a message", array(), 125);
-        return true;
-    }
+	/**
+	 * Method to update module. When you release new version to
+	 * extensions.fossbilling.org then this method will be called
+	 * after the new files are placed.
+	 *
+	 * @param array $manifest - information about the new module version
+	 *
+	 * @return bool
+	 *
+	 * @throws \Box_Exception
+	 */
+	public function update(array $manifest): bool
+	{
+		// throw new \Box_Exception("Throw exception to terminate module update process with a message", array(), 125);
+		return true;
+	}
 
 
 
@@ -324,24 +317,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// read current module version from manifest.json
 		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
 		$current_version = $manifest['version'];
-		$tables = array(
-			'service_proxmox_server',
-			'service_proxmox',
-			'service_proxmox_users',
-			'service_proxmox_storageclass',
-			'service_proxmox_storage',
-			'service_proxmox_lxc_appliance',
-			'service_proxmox_vm_config_template',
-			'service_proxmox_vm_storage_template',
-			'service_proxmox_vm_network_template',
-			'service_proxmox_lxc_config_template',
-			'service_proxmox_lxc_storage_template',
-			'service_proxmox_lxc_network_template',
-			'service_proxmox_qemu_template',
-			'service_proxmox_client_vlan',
-			'service_proxmox_ip_range'
-
-		);
+		$tables = $this->fetchServiceProxmoxTables();
 
 		foreach ($tables as $table) {
 			$sql = "SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='" . DB_NAME . "' AND table_name='" . $table . "'"; /* @phpstan-ignore-line */
@@ -349,7 +325,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$row = $result->fetch();
 			// check if version is the same as current version
 			if ($row['table_comment'] != $current_version) {
-				// if not, throw error to inform user about inconsistent database status
 				throw new \Box_Exception('Database migration is not up to date. Please run the database migration script.');
 			}
 		}
@@ -369,47 +344,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$filesystem = new Filesystem();
 			$filesystem->mkdir([PATH_ROOT . '/pmxconfig'], 0750);
 		} catch (IOException $e) {
-			error_log($e->getMessage());
+			error_log('An error occurred while creating backup directory at ' . $e->getMessage());
 			throw new \Box_Exception('Unable to create directory pmxconfig');
 		}
-		// create filename with timestamp
-		// check if $data is 'uninstall' or 'backup'
+
 		if ($data == 'uninstall') {
 			$filename = '/pmxconfig/proxmox_uninstall_' . date('Y-m-d_H-i-s') . '.sql';
 		} else {
 			$filename = '/pmxconfig/proxmox_backup_' . date('Y-m-d_H-i-s') . '.sql';
 		}
 
-		// get db config
-		$db_user = $this->di['config']['db']['user'];
-		$db_password = $this->di['config']['db']['password'];
-		$db_name = $this->di['config']['db']['name'];
 
 		try {
-			// create PDO instance
-			$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
-
-			// List of tables to backup
-			$tables = array(
-				'service_proxmox_server',
-				'service_proxmox',
-				'service_proxmox_users',
-				'service_proxmox_storage',
-				'service_proxmox_lxc_appliance',
-				'service_proxmox_vm_config_template',
-				'service_proxmox_vm_storage_template',
-				'service_proxmox_vm_network_template',
-				'service_proxmox_lxc_config_template',
-				'service_proxmox_lxc_storage_template',
-				'service_proxmox_lxc_network_template',
-				'service_proxmox_qemu_template',
-				'service_proxmox_client_vlan',
-				'service_proxmox_ip_range',
-				'service_proxmox_ipadress',/*
-				'service_proxmox_ipam_settings' */
-			);
-
-			// Initialize backup variable
+			$pdo = $this->getPdo();
+			$tables = $tables = $this->fetchServiceProxmoxTables();
 			$backup = '';
 
 			// Loop through tables and create SQL statement
@@ -444,62 +392,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$handle = fopen(PATH_ROOT . $filename, 'w+');
 			fwrite($handle, $backup);
 			fclose($handle);
-			// create PDO instance
-			$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
 
-			// List of tables to backup
-			$tables = array(
-				'service_proxmox_server',
-				'service_proxmox',
-				'service_proxmox_users',
-				'service_proxmox_storage',
-				'service_proxmox_lxc_appliance',
-				'service_proxmox_vm_config_template',
-				'service_proxmox_vm_storage_template',
-				'service_proxmox_vm_network_template',
-				'service_proxmox_lxc_config_template',
-				'service_proxmox_lxc_storage_template',
-				'service_proxmox_lxc_network_template',
-				'service_proxmox_qemu_template',
-				'service_proxmox_client_vlan',
-				'service_proxmox_ip_range'
-			);
-
-			// Initialize backup variable
-			$backup = '';
-
-			// Loop through tables and create SQL statement
-			foreach ($tables as $table) {
-				$result = $pdo->query('SELECT * FROM ' . $table);
-				$num_fields = $result->columnCount();
-
-				$backup .= 'DROP TABLE IF EXISTS ' . $table . ';';
-				$row2 = $pdo->query('SHOW CREATE TABLE ' . $table)->fetch(PDO::FETCH_NUM);
-				$backup .= "\n\n" . $row2[1] . ";\n\n";
-
-				while ($row = $result->fetch(PDO::FETCH_NUM)) {
-					$backup .= 'INSERT INTO ' . $table . ' VALUES(';
-					for ($j = 0; $j < $num_fields; $j++) {
-						$row[$j] = addslashes($row[$j]);
-						$row[$j] = preg_replace("/\n/", "\\n", $row[$j]);
-						if (isset($row[$j])) {
-							$backup .= '"' . $row[$j] . '"';
-						} else {
-							$backup .= '""';
-						}
-						if ($j < ($num_fields - 1)) {
-							$backup .= ',';
-						}
-					}
-					$backup .= ");\n";
-				}
-				$backup .= "\n\n\n";
-			}
-
-			// Save to file
-			$handle = fopen(PATH_ROOT . $filename, 'w+');
-			fwrite($handle, $backup);
-			fclose($handle);
 		} catch (\Box_Exception $e) {
 			throw new \Box_Exception('Error during backup process: ' . $e->getMessage());
 		}
@@ -546,40 +439,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
 	/**
 	 * Method to restore Proxmox tables from backup
-	 * It's a bit destructive, as it will drop & overwrite all existing tables
+	 * It's a destructive operation, as it will drop & overwrite all existing tables
 	 * 
 	 * @param string $data - filename of backup
 	 * @return bool
 	 */
 	public function pmxbackuprestore($data)
 	{
-		// get filename from $data and see if it exists using finder
 		$manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
 		$version = $manifest['version'];
-		//if the file exists, restore it
 		$dump = file_get_contents(PATH_ROOT . '/pmxconfig/' . $data['backup']);
-		// check if dump is not empty
 		if (!empty($dump)) {
-			// check version number in first line of dump format: 
-			// -- Proxmox module version: 0.0.5
-			// get first line of dump
 			$version_line = strtok($dump, "\n");
-			// get version number from line
 			$dump_version = str_replace('-- Proxmox module version: ', '', $version_line);
 			$dump = str_replace($version_line . "\n", '', $dump);
 
-			// if version number in dump is smaller than current version number, restore dump and run upgrade function
 			if ($dump_version == $version) {
-				// get db config
 				$db_user = $this->di['config']['db']['user'];
 				$db_password = $this->di['config']['db']['password'];
 				$db_name = $this->di['config']['db']['name'];
 
 				try {
 					// create PDO instance
-					$pdo = new PDO('mysql:host=localhost;dbname=' . $db_name, $db_user, $db_password);
-					$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+					$pdo = $this->getPdo();
 					// split the dump into an array by each sql command
 					$query_array = explode(";", $dump);
 
@@ -645,10 +527,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		$model->created_at    	= date('Y-m-d H:i:s');
 		$model->updated_at    	= date('Y-m-d H:i:s');
 
-		// Find suitable server and save it to service_proxmox
 		$model->server_id = $this->find_empty($product);
-		// Retrieve server info
-
 		$this->di['db']->store($model);
 
 		return $model;
@@ -686,7 +565,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// find client permissions for server
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue, debug: $config['pmx_debug_logging']);
 
 		// Create Proxmox VM
 		if ($proxmox->login()) {
@@ -707,7 +586,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$description = 'Service package ' . $model->id . ' belonging to client id: ' . $client->id;
 
 			if ($product_config['clone'] == true) {
-				$clone = '/' . $product_config['cloneid'] . '/clone'; // Define the route for cloning
+				$clone = '/' . $product_config['cloneid'] . '/clone';
 				$container_settings = array(
 					'newid' => $vmid,
 					'name' => $model->username,
@@ -718,8 +597,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				if ($product_config['virt'] == 'qemu') {
 					$container_settings = array(
 						'vmid' => $vmid,
-						'name' => 'vm' . $vmid,                 // Hostname to define
-						'node' => $server->name,                // Node to create the VM on
+						'name' => 'vm' . $vmid,              
+						'node' => $server->name, 
 						'description' => $description,
 						'storage' => $product_config['storage'],
 						'memory' => $product_config['memory'],
@@ -736,7 +615,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				} else {
 					$container_settings = array(
 						'vmid' => $vmid,
-						'hostname' => 'vm' . $vmid,                // Hostname to define
+						'hostname' => 'vm' . $vmid,
 						'description' => $description,
 						'storage' => $product_config['storage'],
 						'memory' => $product_config['memory'],
@@ -744,7 +623,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 						'password' => $proxmoxuser_password,
 						'net0' => $product_config['network']
 					);
-					// Storage to do for LXC
+					// TODO: Storage for LXC
 				}
 			}
 
@@ -752,7 +631,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$vmurl = "/nodes/" . $server->name . "/" . $product_config['virt'] . $clone;
 
 			$vmcreate = $proxmox->post($vmurl, $container_settings);
-			//echo "Debug:\n " . var_dump($vmcreate) . "\n \n";
 			if ($vmcreate) {
 
 				// Start the vm
@@ -818,7 +696,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		);
 	}
 
-	// function to get novnc_appjs file
+	/**
+	 * Retrieves the novnc appjs file from a Proxmox server.
+	 *
+	 * @param array $data An array containing the version of the appjs file to retrieve.
+	 * @return object The contents of the appjs file.
+	 */
 	public function get_novnc_appjs($data)
 	{
 		// get list of servers
@@ -831,7 +714,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 		// build url
 
 		$url = "https://$hostname:8006/novnc/" . $data; //$data['ver'];
-		// get file using symphony http client
 		// set options
 		$client = $this->getHttpClient()->withOptions([
 			'verify_peer' => false,
@@ -839,18 +721,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			'timeout' => 60,
 		]);
 		$result = $client->request('GET', $url);
-		//echo "<script>console.log('Debug Objects: " . $result->getContent() . "' );</script>";
 		// return file
 		return $result;
 	}
 
+	/**
+	 * Returns an instance of the Symfony HttpClient.
+	 *
+	 * @return \Symfony\Component\HttpClient\HttpClient
+	 */
 	public function getHttpClient()
 	{
 		return \Symfony\Component\HttpClient\HttpClient::create();
 	}
 
-	
 
+
+	/**
+	 * Validates custom form data against a product's form fields.
+	 * TODO: This needs to be fixes / changed
+	 * @param array &$data The form data to validate.
+	 * @param array $product The product containing the form fields to validate against.
+	 * @throws \Box_Exception If a required field is missing or a read-only field is modified.
+	 */
 	public function validateCustomForm(array &$data, array $product)
 	{
 		if ($product['form_id']) {
@@ -873,5 +766,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 				}
 			}
 		}
+	}
+	/**
+	 * Returns the salt value from the configuration.
+	 *
+	 * @return string The salt value.
+	 */
+	private function _getSalt()
+	{
+		return $this->di['config']['salt'];
+	}
+
+	private function getProxmoxInstance($server)
+	{
+		$serveraccess = $this->find_access($server);
+		$config = $this->di['mod_config']('Serviceproxmox');
+		return new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
 	}
 }

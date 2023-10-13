@@ -1,7 +1,8 @@
--- Migration: 0.0.5
--- Initial Migration for Proxmox Server Module
+-- Migration: 0.1.0
+-- Initial Migration for Proxmox Server Module v 0.1.0.
 
-
+-- --------------------------------------------------------
+-- Table for storing proxmox server information
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_server` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -28,6 +29,8 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_server` (
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
 -- --------------------------------------------------------
+-- Table for storing proxmox service information
+-- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
 			`client_id` bigint(20) DEFAULT NULL,
@@ -52,6 +55,8 @@ CREATE TABLE IF NOT EXISTS `service_proxmox` (
 
 
 -- --------------------------------------------------------
+-- Table for storing proxmox user information
+-- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_users` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
 			`client_id` bigint(20) DEFAULT NULL,
@@ -67,14 +72,8 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_users` (
 			KEY `server_id_idx` (`server_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
-
 -- --------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `service_proxmox_storageclass` (
-			`id` bigint(20) NOT NULL AUTO_INCREMENT,
-			`storageclass` varchar(35) DEFAULT NULL,
-			PRIMARY KEY (`id`)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
-
+-- Table for storing proxmox storage information
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_storage` (
 			`id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -83,15 +82,16 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_storage` (
 			`type` varchar(255) DEFAULT NULL,
 			`content` varchar(255) DEFAULT NULL,
 			`active` bigint(20) DEFAULT NULL,
-			`storageclass` varchar(35) DEFAULT NULL,
+			`storageclass` TEXT DEFAULT NULL,
 			`size` bigint(20) DEFAULT NULL,
 			`used` bigint(20) DEFAULT NULL,
 			`free` bigint(20) DEFAULT NULL,
 			PRIMARY KEY (`id`),
-			UNIQUE KEY `server_storage_unique` (`server_id`, `storage`)
+			UNIQUE KEY `server_storage_unique` (`server_id`, `storage`)            
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;            
 
-
+-- --------------------------------------------------------
+-- Table for storing proxmox lxc appliance information
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_appliance` (
 			`id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -99,7 +99,6 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_appliance` (
 			`type` varchar(255) DEFAULT NULL,
 			`package` varchar(255) DEFAULT NULL,
 			`section` varchar(255) DEFAULT NULL,
-
 			`location` varchar(255) DEFAULT NULL,
 			`headline` varchar(255) DEFAULT NULL,
 			`os` varchar(255) DEFAULT NULL,
@@ -114,8 +113,12 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_appliance` (
 			UNIQUE KEY `sha512sum_idx` (`sha512sum`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
+-- --------------------------------------------------------
+-- Table for storing vm configuration templates
+-- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_vm_config_template` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `state` VARCHAR(255) NOT NULL,
             `name` varchar(255) DEFAULT NULL,
             `description` varchar(255) DEFAULT NULL,
             `cores` bigint(20) DEFAULT NULL,
@@ -132,14 +135,14 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_vm_config_template` (
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
 -- --------------------------------------------------------
--- Create vm storage template table
+-- Table for storing vm template storage information
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_vm_storage_template` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `template_id` bigint(20) DEFAULT NULL,
             `storage_type` varchar(255) DEFAULT NULL,
             `size` bigint(20) DEFAULT NULL,
-            `format` varchar(255) DEFAULT NULL,
+            `controller` VARCHAR(255) DEFAULT NULL,
             `created_at` varchar(35) DEFAULT NULL,
             `updated_at` varchar(35) DEFAULT NULL,
             PRIMARY KEY (`id`),
@@ -148,7 +151,7 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_vm_storage_template` (
 
 
 -- --------------------------------------------------------
--- Create vm network template table
+-- Table for storing vm template network information
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_vm_network_template` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -166,7 +169,11 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_vm_network_template` (
             KEY `template_id_idx` (`template_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
-			CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_config_template` (
+
+-- --------------------------------------------------------
+-- Table for storing lxc template information
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_config_template` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `template_id` bigint(20) DEFAULT NULL,
             `name` varchar(255) DEFAULT NULL,
@@ -183,7 +190,7 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_vm_network_template` (
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
 -- --------------------------------------------------------
---  add lxc storage template table with a foreign key to service_proxmox_lxc_template
+--  Table for storing lxc template storage information
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_storage_template` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -198,7 +205,7 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_storage_template` (
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
 -- --------------------------------------------------------
---  add lxc network template table with a foreign key to service_proxmox_lxc_template
+--  Table for storing lxc template network information
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_network_template` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -215,8 +222,7 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_lxc_network_template` (
             PRIMARY KEY (`id`),
             KEY `template_id_idx` (`template_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
--- --------------------------------------------------------
--- New Table: service_proxmox_client_vlan
+
 -- --------------------------------------------------------
 -- Table to store client vlans
 -- --------------------------------------------------------
@@ -232,14 +238,13 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_client_vlan` (
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
 -- --------------------------------------------------------
--- New Table: service_proxmox_ip_range
--- --------------------------------------------------------
 -- Table to store ip networks
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_ip_range` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `cidr` varchar(255) DEFAULT NULL,
             `gateway` varchar(255) DEFAULT NULL,
+            `network` VARCHAR(255) NOT NULL,
             `broadcast` varchar(255) DEFAULT NULL,
             `type` varchar(255) DEFAULT NULL,
             `created_at` varchar(35) DEFAULT NULL,
@@ -247,12 +252,12 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_ip_range` (
             PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
-
-
--- add template vm table for storing information about qemu_template VMs
+-- --------------------------------------------------------
+-- Table to qemu template VMs
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_proxmox_qemu_template` (
-            `id` bigint(20) NOT NULL,
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `vmid` INT(11) NOT NULL,
             `server_id` bigint(20) DEFAULT NULL,
             `name` varchar(255) DEFAULT NULL,
             `created_at` varchar(35) DEFAULT NULL,
@@ -261,5 +266,43 @@ CREATE TABLE IF NOT EXISTS `service_proxmox_qemu_template` (
             KEY `id_idx` (`id`),
             UNIQUE KEY `vmid_server_id_idx` (`id`, `server_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+
+-- --------------------------------------------------------
+-- Table to store ipam settings
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `service_proxmox_ipam_settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `min_network_size` int(11) NOT NULL DEFAULT '24',
+  `max_network_size` int(11) NOT NULL DEFAULT '23',
+  `dns_server_1` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `dns_server_2` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `use_proxmox_sdn` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Add new table for individual ip adresses
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `service_proxmox_ipadress` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ip` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ip_range_id` int(11) NOT NULL,
+  `dedicated` tinyint(1) NOT NULL DEFAULT '0',
+  `gateway` tinyint(1) NOT NULL DEFAULT '0',
+  `vlan` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `ip_range_id` (`ip_range_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Add new table for the tagging system
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `service_proxmox_tag` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- --------------------------------------------------------
 COMMIT;

@@ -28,15 +28,19 @@ trait ProxmoxServer
 	/* ################################################################################################### */
 
 
-	/*
-		Test connection
-	*/
+
+	/**
+	 * Test the connection to the Proxmox server.
+	 *
+	 * @param object $server The server object containing login information.
+	 *
+	 * @return bool Returns true if the connection is successful, otherwise throws an exception.
+	 *
+	 * @throws \Box_Exception If login information is missing or incorrect, or if the connection fails.
+	 */
 	public function test_connection($server)
 	{
-		// Test if login
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		// check if tokenname and tokenvalue contain values by checking their content
 		if (empty($server->tokenname) || empty($server->tokenvalue)) {
 			if (!empty($server->root_user) && !empty($server->root_password)) {
@@ -58,15 +62,22 @@ trait ProxmoxServer
 		}
 	}
 
-	/*
-		Validate token access and setup
-	*/
+
+	/**
+	 * This function tests the token connection to the Proxmox server.
+	 * It checks if the tokenname and tokenvalue contain values by checking their content.
+	 * If they are empty, it throws an exception.
+	 * If the login with token is successful, it retrieves the permissions and checks for 'Realm.AllocateUser' permission.
+	 * If the permission is not found, it throws an exception.
+	 * It also validates if there already is a group for fossbilling and checks if the groupid is the same as the id of the token.
+	 * 
+	 * @param object $server The server object containing the tokenname and tokenvalue.
+	 * @return bool Returns true if the token connection is successful.
+	 * @throws \Box_Exception Throws an exception if the token access fails, the connection to the server fails, or the token does not have 'Realm.AllocateUser' permission.
+	 */
 	public function test_token_connection($server)
 	{
-		// Test if login
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		// check if tokenname and tokenvalue contain values by checking their content
 		if (empty($server->tokenname) || empty($server->tokenvalue)) {
 			throw new \Box_Exception("Token Access Failed: No tokenname or tokenvalue provided");
@@ -96,13 +107,12 @@ trait ProxmoxServer
 				}
 				// check if groupid is the same as the id of the token (fb_1234@pve!fb_access) 
 				$fb_token_instanceid = explode('@', $server->tokenname)[1];
-				
+
 
 				if ($group['groupid'] == $server->tokenname) {
 					$foundgroups += 1;
 					$groupid = $group['groupid'];
 				}
-
 			}
 			return true;
 		} else {
@@ -112,8 +122,13 @@ trait ProxmoxServer
 
 
 
-	/* Find best Server
-	*/
+
+	/**
+	 * Finds an empty server with the best CPU and RAM usage ratio based on the given product's group and filling.
+	 *
+	 * @param object $product The product to find an empty server for.
+	 * @return int|null The ID of the server with the best CPU and RAM usage ratio, or null if no server is found.
+	 */
 	public function find_empty($product)
 	{
 		$productconfig = json_decode($product->config, 1);
@@ -126,11 +141,9 @@ trait ProxmoxServer
 		$ram_overprovion_percent = $config['ram_overprovisioning'];
 		$avoid_overprovision = $config['avoid_overprovision'];
 
-		// Retrieve only non-full active servers sorted by ratio.
-		// priority is given to servers with the largest difference between ram and used ram
-		// if avoid_overprovision is set to true, servers with a ratio of >1 are ignored
+
 		$servers = $this->di['db']->find('service_proxmox_server', ['status' => 'active']);
-		//echo "<script>console.log('Debug Objects: " . json_encode($servers). "' );</script>";
+
 		$server = null;
 		$server_ratio = 0;
 		// use values from database to calculate ratio and store the server id, cpu and ram usage ratio if it's better than the previous one
@@ -164,9 +177,15 @@ trait ProxmoxServer
 		return $server;
 	}
 
-	/*
-		Find access to server (hostname, ipv4, ipv6)
-	*/
+	/**
+	 * Find the access of the server based on its hostname, IPv4 or IPv6 address.
+	 *
+	 * @param object $server The server object containing hostname, IPv4 and/or IPv6 address.
+	 *
+	 * @return string The hostname, IPv4 or IPv6 address of the server.
+	 *
+	 * @throws \Box_Exception If no hostname, IPv4 or IPv6 address is found for the server.
+	 */
 	public function find_access($server)
 	{
 		if (!empty($server->hostname)) {
@@ -180,16 +199,16 @@ trait ProxmoxServer
 		}
 	}
 
-	/*
-		Find server hardware usage information "getHardwareData"
-	*/
+	/**
+	 * Returns hardware data for a given server.
+	 *
+	 * @param object $server The server object.
+	 * @return array The hardware data.
+	 * @throws \Box_Exception If failed to connect to the server.
+	 */
 	public function getHardwareData($server)
 	{
-		// Retrieve associated server
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
-
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			error_log("ProxmoxServer.php: getHardwareData: Login successful");
 			$hardware = $proxmox->get("/nodes/" . $server->name . "/status");
@@ -199,12 +218,16 @@ trait ProxmoxServer
 		}
 	}
 
+	/**
+	 * Returns storage data for a given server.
+	 *
+	 * @param object $server The server object.
+	 * @return array The storage data.
+	 * @throws \Box_Exception If failed to connect to the server.
+	 */
 	public function getStorageData($server)
 	{
-		// Retrieve associated server
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			$storage = $proxmox->get("/nodes/" . $server->name . "/storage");
 			return $storage;
@@ -213,13 +236,16 @@ trait ProxmoxServer
 		}
 	}
 
-	// function to get all assigned cpu_cores and ram on a server (used to find free resources)
+	/**
+	 * Returns assigned resources for a given server.
+	 *
+	 * @param object $server The server object.
+	 * @return array The assigned resources.
+	 * @throws \Box_Exception If failed to connect to the server.
+	 */
 	public function getAssignedResources($server)
 	{
-		// Retrieve associated server
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			$assigned_resources = $proxmox->get("/nodes/" . $server->name . "/qemu");
 			return $assigned_resources;
@@ -228,14 +254,17 @@ trait ProxmoxServer
 		}
 	}
 
-	// function to get available appliances from a server
+	/**
+	 * Returns available appliances.
+	 *
+	 * @return array The available appliances.
+	 * @throws \Box_Exception If failed to connect to the server.
+	 */
 	public function getAvailableAppliances()
 	{
 		$server = $this->di['db']->getExistingModelById('service_proxmox_server', 1, 'Server not found');
 
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			$appliances = $proxmox->get("/nodes/" . $server->name . "/aplinfo");
 			return $appliances;
@@ -244,12 +273,16 @@ trait ProxmoxServer
 		}
 	}
 
-	// function to get available template vms from a server
-	public function getQemuTemplates($server)
+	/**
+	 * Returns an array of QEMU virtual machines for the given Proxmox server.
+	 *
+	 * @param object $server The server object containing the server name.
+	 * @return array An array of QEMU virtual machines.
+	 * @throws \Box_Exception If failed to connect to the server.
+	 */
+	public function getQemuVMs($server)
 	{
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			$templates = $proxmox->get("/nodes/" . $server->name . "/qemu");
 			return $templates;

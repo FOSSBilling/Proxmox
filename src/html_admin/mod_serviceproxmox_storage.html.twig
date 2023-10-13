@@ -99,93 +99,89 @@
    {% block js %}
    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
    <script>
-      $(document).ready(function() {
-         var Type = "storage";
-         var select = new TomSelect('#storageTypeTags', {
-             plugins: ['remove_button', 'input_autogrow'],
-             create: function (input, callback) {
-               // Send the new tag to the server to save it
-               saveTagToDatabase(input, function (responseTag) {
-                     // Callback with the saved tag to add it to the dropdown
-                     callback({ value: responseTag.name, text: responseTag.name });
-               });
+    $(document).ready(function() {
+        var Type = "storage";
+        var select = new TomSelect('#storageTypeTags', {
+            plugins: ['remove_button', 'input_autogrow'],
+            create: function(input, callback) {
+                saveTagToDatabase(input, function(responseTag) {
+                    callback({
+                        value: responseTag.name,
+                        text: responseTag.name
+                    });
+                });
             },
-             delimiter: ',',
-             // Add more options and settings as needed
-         });
-
-         getTagsForType(Type, function(options) {
-             // Add options to the TomSelect instance
-             select.addOption(options);
-         });
-
-         getTagsForStorage(function(options) {
-            // Convert the data to a format suitable for TomSelect
+            delimiter: ',',
+        });
+    
+        getTagsForType(Type, function(options) {
+            select.addOption(options);
+        });
+    
+        getTagsForStorage(function(options) {
             var formattedOptions = options.map(option => {
-                return { value: option.id, text: option.name };
+                return {
+                    value: option.id,
+                    text: option.name
+                };
             });
-        
-            // Add each option to the TomSelect instance
+    
             select.addOption(formattedOptions);
-            
-            // Add items to the TomSelect instance
+    
             options.forEach(option => {
                 select.addItem(option.id);
             });
         });
-            
-            
-         });
-
-     function getTagsForType(Type, callback) {
-         // Create the AJAX request
-         var options = [];
-         API.admin.post("serviceproxmox/service_get_tags", {type: Type}, function(response) {
-            for (var key in response) {
-               if (response.hasOwnProperty(key)) {
-                   var option = {
-                       value: response[key].id,
-                       text: response[key].name
-                   };
-                   options.push(option);
-               }
-           }
-           // Call the callback function with the options array
-           callback(options);
-          }, function(error) {
-                 // Handle the error response
-                 console.log('Error occurred while getting tags: ' + error);
-                 // Call the callback function with an empty array
-                 callback(options);
-          }, false);
-     }
-
-   // function to get tags for this storage and add them to the select as selected
-      function getTagsForStorage(callback) {
-         // Create the AJAX request
-         const storage_id = $('input[name="storageid"]').val();
-         API.admin.post('serviceproxmox/service_get_tags_by_storage', { storageid: storage_id }, (response) => {
-            // Convert the JSON string response to an array of objects
-            callback(response);
-         }, (error) => {
-            // Handle the error response
-            console.log(`Error occurred while getting tags: ${error}`);
-            // Call the callback function with an empty array
-            callback([]);
-         }, false);
-   }
     
-      function saveTagToDatabase(tag, callback) {
-         var Type = "storage";
-         API.admin.post("serviceproxmox/service_add_tag", { type: Type, tag: tag }, (response) => {
-             if (callback) {
-                 callback(response);
-             }
-         }, (error) => {
-             console.log('Error occurred while saving tag: ' + error);
-         }, false);
-     }
-
+    
+    });
+    
+    function getTagsForType(Type, callback) {
+        var options = [];
+        API.admin.post("serviceproxmox/service_get_tags", {
+            type: Type
+        }, function(response) {
+            for (var key in response) {
+                if (response.hasOwnProperty(key)) {
+                    var option = {
+                        value: response[key].id,
+                        text: response[key].name
+                    };
+                    options.push(option);
+                }
+            }
+            callback(options);
+        }, function(error) {
+            console.log(`Error occurred while getting tags: ${error}`);
+            callback(options);
+        }, false);
+    }
+    
+    function getTagsForStorage(callback) {
+        const storage_id = $('input[name="storageid"]').val();
+        API.admin.post('serviceproxmox/service_get_tags_by_storage', {
+            storageid: storage_id
+        }, (response) => {
+            callback(response);
+        }, (error) => {
+            console.log(`Error occurred while getting tags: ${error}`);
+            callback([]);
+        }, false);
+    }
+    
+    function saveTagToDatabase(tag, callback) {
+        var Type = "storage";
+        API.admin.post("serviceproxmox/service_add_tag", {
+            type: Type,
+            tag: tag
+        }, (response) => {
+            if (callback) {
+                callback(response);
+            }
+        }, (error) => {
+            console.log(`Error occurred while saving tag: ${error}`);
+        }, false);
+    }
    </script>
 
 

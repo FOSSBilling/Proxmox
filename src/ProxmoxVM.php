@@ -89,15 +89,9 @@ trait ProxmoxVM
 
 			$product = $this->di['db']->load('product', $order->product_id);
 			$product_config = json_decode($product->config, 1);
-
-			// Retrieve associated server
 			$server = $this->di['db']->findOne('service_proxmox_server', 'id=:id', array(':id' => $model->server_id));
 
-			// Connect to YNH API
-			$serveraccess = $this->find_access($server);
-			$config = $this->di['mod_config']('Serviceproxmox');
-			$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue,debug: $config['pmx_debug_logging']);
-
+			$proxmox = $this->getProxmoxInstance($server);
 			if ($proxmox->login()) {
 				$proxmox->post("/nodes/" . $model->node . "/" . $product_config['virt'] . "/" . $model->vmid . "/status/shutdown", array());
 				$status = $proxmox->get("/nodes/" . $model->node . "/" . $product_config['virt'] . "/" . $model->vmid . "/status/current");
@@ -135,15 +129,10 @@ trait ProxmoxVM
 		$product = $this->di['db']->load('product', $order->product_id);
 		$product_config = json_decode($product->config, 1);
 		$client = $this->di['db']->load('client', $order->client_id);
-
-		// Retrieve associated server
 		$server = $this->di['db']->findOne('service_proxmox_server', 'id=:id', array(':id' => $service->server_id));
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 
-		// Test if login
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->get_version()) {
 			$status = $proxmox->get("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/current");
 			// VM monitoring?
@@ -166,14 +155,10 @@ trait ProxmoxVM
 		$product_config = json_decode($product->config, 1);
 		$client = $this->di['db']->load('client', $order->client_id);
 
-		// Retrieve associated server
 		$server = $this->di['db']->findOne('service_proxmox_server', 'id=:id', array(':id' => $service->server_id));
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 
-		// Test if login
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			$proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/shutdown", array());
 			$status = $proxmox->get("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/current");
@@ -213,15 +198,10 @@ trait ProxmoxVM
 		$product = $this->di['db']->load('product', $order->product_id);
 		$product_config = json_decode($product->config, 1);
 		$client = $this->di['db']->load('client', $order->client_id);
-		// Retrieve associated server
-		// Retrieve associated server
 		$server = $this->di['db']->findOne('service_proxmox_server', 'id=:id', array(':id' => $service->server_id));
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
 
-		// Test if login
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			$proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/status/start", array());
 			return true;
@@ -238,16 +218,10 @@ trait ProxmoxVM
 		$product = $this->di['db']->load('product', $order->product_id);
 		$product_config = json_decode($product->config, 1);
 		$client = $this->di['db']->load('client', $order->client_id);
-		// Retrieve associated server
 		$server = $this->di['db']->findOne('service_proxmox_server', 'id=:id', array(':id' => $service->server_id));
 
-		// Test if login
-		// find service access for server
 		$clientuser = $this->di['db']->findOne('service_proxmox_users', 'server_id = ? and client_id = ?', array($server->id, $client->id));
-		//echo "D: ".var_dump($order);
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $clientuser->admin_tokenname, tokensecret: $clientuser->admin_tokenvalue,debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if ($proxmox->login()) {
 			$settings = array(
 				'forceStop' 	=> true
@@ -259,5 +233,4 @@ trait ProxmoxVM
 			throw new \Box_Exception("Login to Proxmox Host failed.");
 		}
 	}
-
 }

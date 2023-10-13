@@ -38,10 +38,7 @@ trait ProxmoxAuthentication
 	 */
 	public function prepare_pve_setup($server)
 	{
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$serveraccess = $this->find_access($server);
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
-
+		$proxmox = $this->getProxmoxInstance($server);
 		// Attempt to log in to the server using the API
 		if (!$proxmox->login()) {
 			throw new \Box_Exception("Failed to log in to the proxmox server. Check username & password and try again.");
@@ -87,7 +84,7 @@ trait ProxmoxAuthentication
 				default:
 					throw new \Box_Exception("More than one group found");
 					break;
-				}
+			}
 
 			// Validate if there already is a user and token for fossbilling
 			$users = $proxmox->get("/access/users");
@@ -107,7 +104,7 @@ trait ProxmoxAuthentication
 						$proxmox->post("/access/users", array('userid' => $userid, 'password' => $this->di['tools'], 'enable' => 1, 'comment' => 'fossbilling user', 'groups' => $groupid)); /* @phpstan-ignore-line */
 
 						// Create a token for the new user
-						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array()); /* @phpstan-ignore-line Proxmox is set, otherwise code errors out */ 
+						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array()); /* @phpstan-ignore-line Proxmox is set, otherwise code errors out */
 
 						// Check if the token was created successfully
 						if ($token) {
@@ -120,7 +117,7 @@ trait ProxmoxAuthentication
 						break;
 					case 1:
 						// Create a token for the existing user
-						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array());/* @phpstan-ignore-line Proxmox is set, otherwise code errors out */ 
+						$token = $proxmox->post("/access/users/" . $userid . "/token/fb_access", array());/* @phpstan-ignore-line Proxmox is set, otherwise code errors out */
 						if ($token) {
 							$server->tokenname = $token['full-tokenid'];
 							$server->tokenvalue = $token['value'];
@@ -173,7 +170,7 @@ trait ProxmoxAuthentication
 				}
 			}
 			return $this->test_access($server);
-		} 
+		}
 		return false;
 	}
 
@@ -187,10 +184,7 @@ trait ProxmoxAuthentication
 	 */
 	public function test_access($server)
 	{
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$serveraccess = $this->find_access($server);
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
-
+		$proxmox = $this->getProxmoxInstance($server);
 		// Attempt to log in to the server using the API
 		if (!$proxmox->login()) {
 			throw new \Box_Exception("Failed to connect to the server. testpmx");
@@ -237,9 +231,7 @@ trait ProxmoxAuthentication
 		$clientuser = $this->di['db']->dispense('service_proxmox_users');
 		$clientuser->client_id = $client->id;
 		$this->di['db']->store($clientuser);
-		$serveraccess = $this->find_access($server);
-		$config = $this->di['mod_config']('Serviceproxmox');
-		$proxmox = new \PVE2APIClient\PVE2_API($serveraccess, $server->root_user, $server->realm, $server->root_password, port: $server->port, tokenid: $server->tokenname, tokensecret: $server->tokenvalue, debug: $config['pmx_debug_logging']);
+		$proxmox = $this->getProxmoxInstance($server);
 		if (!$proxmox->login()) {
 			throw new \Box_Exception("Failed to connect to the server. create_client_user");
 		}

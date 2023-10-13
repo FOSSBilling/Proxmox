@@ -581,45 +581,38 @@
 }
 
 </style>
-
 <script>
     $(document).ready(function() {
-    $('#slide-toggle').on('change', function() {
-        $('.help-section').toggleClass('d-none');
-
-        if ($('#slide-toggle').prop('checked')) {
-            // Slide toggle is ON
-            $('#toggle-label').text('Hide help');
-        } else {
-            // Slide toggle is OFF
-            $('#toggle-label').text('Show help');
-        }
+        $('#slide-toggle').on('change', function() {
+            $('.help-section').toggleClass('d-none');
+    
+            if ($('#slide-toggle').prop('checked')) {
+                $('#toggle-label').text('Hide help');
+            } else {
+                $('#toggle-label').text('Show help');
+            }
+        });
+        document.getElementsByName("user_name_field")[0].hidden = true;
+        document.getElementsByName("password_field")[0].hidden = true;
+        document.getElementsByName("token_name_field")[0].hidden = true;
+        document.getElementsByName("token_value_field")[0].hidden = true;
     });
-    document.getElementsByName("user_name_field")[0].hidden = true;
-    document.getElementsByName("password_field")[0].hidden = true;
-    document.getElementsByName("token_name_field")[0].hidden = true;
-    document.getElementsByName("token_value_field")[0].hidden = true;
-});
-
-// write native Javascript code that changes the visibility of the username / password or token fields based on the selected radio button
-
-var username = document.getElementById("username");
-var token = document.getElementById("token");
-
-username.addEventListener("click", function() {
-    document.getElementsByName("user_name_field")[0].hidden = false;
-    document.getElementsByName("password_field")[0].hidden = false;
-    document.getElementsByName("token_name_field")[0].hidden = true;
-    document.getElementsByName("token_value_field")[0].hidden = true;
-});
-
-token.addEventListener("click", function() {
-    document.getElementsByName("user_name_field")[0].hidden = true;
-    document.getElementsByName("password_field")[0].hidden = true;
-    document.getElementsByName("token_name_field")[0].hidden = false;
-    document.getElementsByName("token_value_field")[0].hidden = false;
-});
-
-
-</script>> 
+    
+    var username = document.getElementById("username");
+    var token = document.getElementById("token");
+    
+    username.addEventListener("click", function() {
+        document.getElementsByName("user_name_field")[0].hidden = false;
+        document.getElementsByName("password_field")[0].hidden = false;
+        document.getElementsByName("token_name_field")[0].hidden = true;
+        document.getElementsByName("token_value_field")[0].hidden = true;
+    });
+    
+    token.addEventListener("click", function() {
+        document.getElementsByName("user_name_field")[0].hidden = true;
+        document.getElementsByName("password_field")[0].hidden = true;
+        document.getElementsByName("token_name_field")[0].hidden = false;
+        document.getElementsByName("token_value_field")[0].hidden = false;
+    });
+</script> 
 {% endblock %}

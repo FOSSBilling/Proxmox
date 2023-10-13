@@ -27,27 +27,35 @@ trait ProxmoxTemplates
 	/* ####################################  VM Template Mgmt  ########################################### */
 	/* ################################################################################################### */
 
-	// Function that gets all the VM templates and returns them as an array
+	/**
+	 * Returns an array of all VM templates.
+	 *
+	 * @return array
+	 */
 	public function get_vmtemplates()
 	{
-		// get all the VM templates from the service_proxmox_vm_config_template table
 		$templates = $this->di['db']->findAll('service_proxmox_vm_config_template');
 		return $templates;
 	}
 
-
-	// Function that gets all the LXC templates and returns them as an array
+	/**
+	 * Returns an array of all LXC templates.
+	 *
+	 * @return array
+	 */
 	public function get_lxctemplates()
 	{
-		// get all the LXC templates from the service_proxmox_lxc_config_template table
 		$templates = $this->di['db']->findAll('service_proxmox_lxc_config_template');
 		return $templates;
 	}
 
-	// Function that gets all qemu templates and returns them as an array
+	/**
+	 * Returns an array of all QEMU templates, with the server name for each template.
+	 *
+	 * @return array
+	 */
 	public function get_qemutemplates()
 	{
-		// get all the qemu templates from the service_proxmox_qemu_template table
 		$qemu_templates = $this->di['db']->findAll('service_proxmox_qemu_template');
 		// Get server name for each template
 		foreach ($qemu_templates as $qemu_template) {
@@ -57,38 +65,50 @@ trait ProxmoxTemplates
 		return $qemu_templates;
 	}
 
-	// Function that gets a vm config template by id
+	/**
+	 * Get the virtual machine configuration template by ID.
+	 *
+	 * @param int $id The ID of the template to retrieve.
+	 * @return Model The virtual machine configuration template.
+	 */
 	public function get_vmconfig($id)
 	{
-		// get the vm config template from the service_proxmox_vm_config_template table
 		$template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $id);
 		return $template;
 	}
 
-	// Function that gets a lxc config template by id
+	/**
+	 * Get the Linux container configuration template by ID.
+	 *
+	 * @param int $id The ID of the template to retrieve.
+	 * @return Model The Linux container configuration template.
+	 */
 	public function get_lxc_conftempl($id)
 	{
-		// get the lxc config template from the service_proxmox_lxc_config_template table
 		$template = $this->di['db']->getExistingModelById('service_proxmox_lxc_config_template', $id);
 		return $template;
 	}
 
-
-
-	// function to get tags for type
+	/**
+	 * Get all tags of a certain type.
+	 *
+	 * @param array $data An array containing the type of tags to retrieve.
+	 * @return array An array of tags of the specified type.
+	 */
 	public function get_tags($data)
 	{
-		// get list of tags for input type
 		$tags = $this->di['db']->find('service_proxmox_tag', 'type=:type', array(':type' => $data['type']));
-		// return tags
 		return $tags;
 	}
 
-	// function to save tags for type
+	/**
+	 * Saves a tag to the database, creating it if it doesn't already exist.
+	 *
+	 * @param array $data An array containing the tag type and name.
+	 * @return object The tag that was just created or the tag that already exists.
+	 */
 	public function save_tag($data)
 	{
-		// $data contains 'type' and 'tag' 
-		
 		// search if the tag already exists
 		$tag_exists = $this->di['db']->findOne('service_proxmox_tag', 'type=:type AND name=:name', array(':type' => $data['type'], ':name' => $data['tag']));
 		// and if not create it
@@ -103,27 +123,24 @@ trait ProxmoxTemplates
 		// return the tag that already exists
 		return $tag_exists;
 	}
-		
 
-	// Function to return tags for storage (stored in service_proxmox_storage->storageclass) ($data contains storageid)
+	/**
+	 * Gets the tags associated with a given storage ID.
+	 *
+	 * @param array $data An array containing the storage ID.
+	 * @return mixed An array of tags or an empty string if the storage has no tags.
+	 */
 	public function get_tags_by_storage($data)
 	{
-		// get storageclass for storage
-		// log to debug.log
-		error_log('get_tags_by_storage: ' . $data['storageid']);
 		$storage = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['storageid']));
-		// return tags (saved in json format in $storage->storageclass) (F.ex ["ssd","hdd"])
-		// as well as the service_proxmox_tag id for each tag so there is a key value pair with id and name.
-		// check if $storage->storageclass is not empty
+
 		if (empty($storage->storageclass)) {
-			// if empty return empty array
+			// if empty return empty string
 			$tags = "";
 		} else {
 			$tags = json_decode($storage->storageclass, true);
 		}
 		return $tags;
-
-		
 	}
 
 }

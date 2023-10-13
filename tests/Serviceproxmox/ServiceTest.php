@@ -72,16 +72,5 @@ class ServiceTest extends \BBTestCase {
         $this->assertInstanceOf('\RedBeanPHP\SimpleModel', $result);
         $this->assertEquals($orderModel->client_id, $result->client_id);
         $this->assertEquals(1, $result->server_id); // Asserting the server ID is set correctly
-    }
-    
-    public function testGetHttpClient()
-    {
-        // Call the method
-        $httpClient = $this->getHttpClient();
-
-        // Assert that the returned object is an instance of the expected HttpClient
-        $this->assertInstanceOf(\Symfony\Component\HttpClient\HttpClient::class, $httpClient);
-    }
-
-
+    }   
 }

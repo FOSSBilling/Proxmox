@@ -176,7 +176,6 @@ class Admin extends \Api_Abstract
                 'free'          => $storage->free,
                 'percent_used'  => ($storage->size == 0 || $storage->used == 0 || $storage->free == 0) ? 0 : round($storage->used / $storage->size * 100, 2),
             );
-            
         }
         return $storages_grouped;
     }
@@ -358,7 +357,6 @@ class Admin extends \Api_Abstract
     // Function to enable qemu template
     public function vm_config_template_enable($data)
     {
-        error_log("vm_config_template_enable: " . $data['id']);
         $vm_config_template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $data['id'], 'VM Config Template not found');
         $vm_config_template->state = 'active';
         $this->di['db']->store($vm_config_template);
@@ -368,7 +366,6 @@ class Admin extends \Api_Abstract
     // Function to disable qemu template
     public function vm_config_template_disable($data)
     {
-        error_log("vm_config_template_disable: " . $data['id']);
         $vm_config_template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $data['id'], 'VM Config Template not found');
         $vm_config_template->state = 'inactive';
         $this->di['db']->store($vm_config_template);
@@ -411,7 +408,7 @@ class Admin extends \Api_Abstract
         if ($server) {
             throw new \Box_Exception('Server already exists');
         }
-    
+
         $server                     = $this->di['db']->dispense('service_proxmox_server');
         $server->name               = $data['name'];
         $server->group              = $data['group'];
@@ -433,22 +430,15 @@ class Admin extends \Api_Abstract
             $server->root_password  = $data['root_password'];
             $server->tokenname      = '';
             $server->tokenvalue     = '';
-            $this->di['db']->store($server);
-            $this->getService()->test_connection($server);
         } else {
             $server->root_user      = '';
             $server->root_password  = '';
             $server->tokenname      = $data['tokenname'];
             $server->tokenvalue     = $data['tokenvalue'];
-            $this->di['db']->store($server);
-            
         }
-
-        
         // Validate server by testing connection
-
-        
-
+        $this->di['db']->store($server);
+        $this->getService()->test_connection($server);
         return true;
     }
 
@@ -525,7 +515,7 @@ class Admin extends \Api_Abstract
         $server->cpu_cores        = $data['cpu_cores'];
         $server->ram              = $data['ram'];
         $server->root_user        = $data['root_user'];
-        $server->root_password   = $data['root_password'];
+        $server->root_password    = $data['root_password'];
         $server->tokenname        = $data['tokenname'];
         $server->config           = $data['config'];
         $server->active           = $data['active'];
@@ -654,9 +644,8 @@ class Admin extends \Api_Abstract
             $server->ram_allocated += $value['maxmem'];
         }
         $this->di['db']->store($server);
-        $qemu_templates = $service->getQemuTemplates($server);
-        error_log('qemu_templates: ' . print_r($qemu_templates, true));
-        foreach ($qemu_templates as $key => $value) {
+        $qemu_vms = $service->getQemuVMs($server);
+        foreach ($qemu_vms as $key => $value) {
             // check if $value['template'] exists, and if it's content is 1
             if (!empty($value['template'])) {
                 if ($value['template'] == 1) {
@@ -676,7 +665,6 @@ class Admin extends \Api_Abstract
                     $template->updated_at = date('Y-m-d H:i:s');
 
                     $stored = $this->di['db']->store($template);
-                    error_log('template saved: ' . print_r($stored, true));
                 }
             }
         }
@@ -859,19 +847,14 @@ class Admin extends \Api_Abstract
 
         // Retrieve associated storage
         $storage = $this->di['db']->findOne('service_proxmox_storage', 'id=:id', array(':id' => $data['storageid']));
-        
-        // $data['storageTypeTags']; contains an array of tags like this: Array([0] => ssd,hdd,sdf)
-        // This needs to be split up and stored as valid json in the storage table
-        error_log('storageTypeTags: ' . print_r($data['storageTypeTags'], true));
-        // Assuming you have $data['storagetype'] populated
+
         $storageType = $data['storagetype'];
         $tagArray = [];
         foreach ($data['storageTypeTags'] as $tag) {
             $splitTags = explode(',', $tag);
-            $tagArray = array_merge($tagArray, $splitTags); // Flat array of tags
+            $tagArray = array_merge($tagArray, $splitTags); 
         }
-    
-        // for every tag in the tagArray, save the id to the error_log
+
         $jsonArray = [];
         foreach ($tagArray as $tagId) {
             // Fetch the tag details from DB
@@ -879,7 +862,7 @@ class Admin extends \Api_Abstract
                 ':id' => $tagId,
                 ':type' => $storageType
             ]);
-    
+
             if ($tag_from_db) {
                 $jsonArray[] = [
                     'id' => $tag_from_db->id,
@@ -889,7 +872,7 @@ class Admin extends \Api_Abstract
                 error_log("No DB entry found for tagId: $tagId and type: $storageType");
             }
         }
-    
+
         $jsonString = json_encode($jsonArray);
         $storage->storageclass = $jsonString;
         $this->di['db']->store($storage);
@@ -1032,7 +1015,6 @@ class Admin extends \Api_Abstract
     {
         $added_tag = $this->getService()->save_tag($data);
         return $added_tag;
-        
     }
 
     /**
@@ -1043,7 +1025,6 @@ class Admin extends \Api_Abstract
     public function service_get_tags_by_storage($data)
     {
         $output = $this->getService()->get_tags_by_storage($data);
-        error_log("service_get_tags_by_storage: " . print_r($output, true));
         return $output;
     }
 
@@ -1054,7 +1035,6 @@ class Admin extends \Api_Abstract
      */
     public function vm_config_template_get($data)
     {
-        error_log("vm_config_template_get");
         $vm_config_template = $this->di['db']->findOne('service_proxmox_vm_config_template', 'id=:id', array(':id' => $data['id']));
         if (!$vm_config_template) {
             throw new \Box_Exception('VM template not found');
@@ -1084,30 +1064,30 @@ class Admin extends \Api_Abstract
      * @return array<mixed>
      */
 
-     public function vm_config_template_get_storages($data)
-     {
-         $vm_config_template = $this->di['db']->find('service_proxmox_vm_storage_template', 'template_id=:id', array(':id' => $data['id']));
-         
-         // Replace the storage_type with the name of the tag
-         foreach ($vm_config_template as $key => $value) {
-             $storage_tag_ids = explode(',', json_decode($value->storage_type));  // Split the IDs
-             $tagNames = [];
-     
-             foreach ($storage_tag_ids as $tagId) {
-                 $tag = $this->di['db']->findOne('service_proxmox_tag', 'id=:id', array(':id' => $tagId));
-                 if ($tag) {
-                     $tagNames[] = $tag->name;
-                 } else {
-                     error_log("No DB entry found for tagId: $tagId");
-                 }
-             }
-     
-             // Combine all the tag names into a single string
-             $vm_config_template[$key]->storage_type = implode(', ', $tagNames);
-         }
-     
-         return $vm_config_template;
-     }
+    public function vm_config_template_get_storages($data)
+    {
+        $vm_config_template = $this->di['db']->find('service_proxmox_vm_storage_template', 'template_id=:id', array(':id' => $data['id']));
+
+        // Replace the storage_type with the name of the tag
+        foreach ($vm_config_template as $key => $value) {
+            $storage_tag_ids = explode(',', json_decode($value->storage_type));  // Split the IDs
+            $tagNames = [];
+
+            foreach ($storage_tag_ids as $tagId) {
+                $tag = $this->di['db']->findOne('service_proxmox_tag', 'id=:id', array(':id' => $tagId));
+                if ($tag) {
+                    $tagNames[] = $tag->name;
+                } else {
+                    error_log("No DB entry found for tagId: $tagId");
+                }
+            }
+
+            // Combine all the tag names into a single string
+            $vm_config_template[$key]->storage_type = implode(', ', $tagNames);
+        }
+
+        return $vm_config_template;
+    }
 
     /**
      * Function to delete vm config template storage
@@ -1255,7 +1235,6 @@ class Admin extends \Api_Abstract
         );
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        error_log("vm_template_update: " . print_r($data, true));
         // Retrieve associated vm_config_template
         $vm_config_template  = $this->di['db']->findOne('service_proxmox_vm_config_template', 'id=:id', array(':id' => $data['id']));
 
@@ -1578,10 +1557,10 @@ class Admin extends \Api_Abstract
     {
         $required = array(
             'id'          => 'ID is missing',
-        ); 
+        );
 
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        
+
         $client_network = $this->di['db']->findOne('service_proxmox_client_vlan', 'id = ?', [$data['id']]);
         $this->di['db']->trash($client_network);
         $this->di['logger']->info('Delete Client Network %s', $data['id']);
@@ -1650,4 +1629,13 @@ class Admin extends \Api_Abstract
         return $config['version'];
     }
 
+    /**
+     * Returns the salt value from the configuration.
+     *
+     * @return string The salt value.
+     */
+    private function _getSalt()
+    {
+        return $this->di['config']['salt'];
+    }
 } // EOF
