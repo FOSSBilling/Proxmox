@@ -464,7 +464,50 @@
                     </h2>
                 </div>
                 <div class="card-body">
+                    <form method="post" action="admin/serviceproxmox/save_ipam_settings" class="api-form" data-api-redirect="{{ 'serviceproxmox/ipam'|alink }}">
+                        <h3>Automation Settings</h3>
+                        <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'Create a new VLAN for each customer?' | trans }}:                                                                            
+                        </label>
+                        <div class="col">
 
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioVLANPerCustomerYes" type="radio" name="vlan_per_customer" value="1">
+                                    <label class="form-check-label" for="radioVLANPerCustomerYes">
+                                        {{ 'Yes' | trans }}
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioVLANPerCustomerNo" type="radio" name="vlan_per_customer" value="0" checked>
+                                    <label class="form-check-label" for="radioVLANPerCustomerNo">
+                                        {{ 'No' | trans }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">
+                            {{ 'Create a new IP Range for each customer?' | trans }}:                                                                            
+                        </label>
+                        <div class="col">
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioIPRangePerCustomerYes" type="radio" name="vlan_per_customer" value="1">
+                                    <label class="form-check-label" for="radioIPRangePerCustomerYes">
+                                        {{ 'Yes' | trans }}
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" id="radioIPRangePerCustomerNo" type="radio" name="vlan_per_customer" value="0" checked>
+                                    <label class="form-check-label" for="radioIPRangePerCustomerNo">
+                                        {{ 'No' | trans }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="submit" value="{{ 'Save Settings' | trans }}" class="btn btn-primary">
+                    </form>
                 </div>
                 <div class="card-body">
 
