@@ -1084,19 +1084,43 @@ class Admin extends \Api_Abstract
      * @return array<mixed>
      */
 
-    public function vm_config_template_get_storages($data)
+     public function vm_config_template_get_storages($data)
+     {
+         $vm_config_template = $this->di['db']->find('service_proxmox_vm_storage_template', 'template_id=:id', array(':id' => $data['id']));
+         
+         // Replace the storage_type with the name of the tag
+         foreach ($vm_config_template as $key => $value) {
+             $storage_tag_ids = explode(',', json_decode($value->storage_type));  // Split the IDs
+             $tagNames = [];
+     
+             foreach ($storage_tag_ids as $tagId) {
+                 $tag = $this->di['db']->findOne('service_proxmox_tag', 'id=:id', array(':id' => $tagId));
+                 if ($tag) {
+                     $tagNames[] = $tag->name;
+                 } else {
+                     error_log("No DB entry found for tagId: $tagId");
+                 }
+             }
+     
+             // Combine all the tag names into a single string
+             $vm_config_template[$key]->storage_type = implode(', ', $tagNames);
+         }
+     
+         return $vm_config_template;
+     }
+
+    /**
+     * Function to delete vm config template storage
+     * 
+     * @return bool
+     */
+    public function vm_config_template_delete_storage($data)
     {
-        error_log("Get list of storages for VM Template: " . print_r($data, true));
-        $vm_config_template = $this->di['db']->find('service_proxmox_vm_storage_template', 'template_id=:id', array(':id' => $data['id']));
-        //replace the storage_type with the name of the tag
-        foreach ($vm_config_template as $key => $value) {
-            $storage_tag_id = json_decode($value->storage_type);
-            error_log("storage_tag_id: " . print_r($storage_tag_id, true));
-            $tag = $this->di['db']->findOne('service_proxmox_tag', 'id=:id', array(':id' => $storage_tag_id));
-            $vm_config_template[$key]->storage_type = $tag->name;
-        }
-        return $vm_config_template;
+        $vm_config_template = $this->di['db']->findOne('service_proxmox_vm_storage_template', 'id=:id', array(':id' => $data['id']));
+        $this->di['db']->trash($vm_config_template);
+        return true;
     }
+
 
     /**
      * Get list of lxc configuration templates
