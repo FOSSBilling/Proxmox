@@ -180,16 +180,6 @@ class Admin extends \Api_Abstract
         return $storages_grouped;
     }
 
-    /**
-     * Get list of storageclasses
-     * 
-     * @return array
-     */
-    public function storageclass_get_list()
-    {
-        $storageclasses = $this->di['db']->find('service_proxmox_storageclass');
-        return $storageclasses;
-    }
 
     /**
      * Get list of storage controllers
@@ -224,29 +214,6 @@ class Admin extends \Api_Abstract
         return $services;
     }
 
-    /**
-     * Create a new storageclass
-     * 
-     * @return array<mixed>
-     */
-    public function storageclass_create($data)
-    {
-        $storageclass = $this->di['db']->dispense('service_proxmox_storageclass');
-        $storageclass->storageclass = $data['storageClassName'];
-        $this->di['db']->store($storageclass);
-        return $storageclass;
-    }
-
-    /**
-     * Retrieve a single storageclass
-     * 
-     * @return array<mixed>
-     */
-    public function storageclass_get($data)
-    {
-        $storageclass = $this->di['db']->getExistingModelById('service_proxmox_storageclass', $data['id'], 'Storageclass not found');
-        return $storageclass;
-    }
 
     /** 
      *	Get list of server groups
@@ -820,8 +787,6 @@ class Admin extends \Api_Abstract
             'used'              => $storage->used,
             'free'              => $storage->free,
             'percent_used'  => ($storage->size == 0 || $storage->used == 0 || $storage->free == 0) ? 0 : round($storage->used / $storage->size * 100, 2),
-            // add list of storage classes
-            'storageclasses'    => $this->storageclass_get_list(),
             'server_name'       => $server->name,
         );
 
@@ -842,6 +807,7 @@ class Admin extends \Api_Abstract
         $required = array(
             'storageid'    => 'Storage id is missing',
             'storageTypeTags'    => 'Storage tags are missing',
+            'storagetype'    => 'Storage type is missing',
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
@@ -852,14 +818,14 @@ class Admin extends \Api_Abstract
         $tagArray = [];
         foreach ($data['storageTypeTags'] as $tag) {
             $splitTags = explode(',', $tag);
-            $tagArray = array_merge($tagArray, $splitTags); 
+            $tagArray = array_merge($tagArray, $splitTags);
         }
 
         $jsonArray = [];
-        foreach ($tagArray as $tagId) {
+        foreach ($tagArray as $tagName) {
             // Fetch the tag details from DB
-            $tag_from_db = $this->di['db']->findOne('service_proxmox_tag', 'id=:id AND type=:type', [
-                ':id' => $tagId,
+            $tag_from_db = $this->di['db']->findOne('service_proxmox_tag', 'name=:name AND type=:type', [
+                ':name' => $tagName,
                 ':type' => $storageType
             ]);
 
