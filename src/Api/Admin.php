@@ -835,7 +835,7 @@ class Admin extends \Api_Abstract
                     'name' => $tag_from_db->name
                 ];
             } else {
-                error_log("No DB entry found for tagId: $tagId and type: $storageType");
+                error_log("No DB entry found for tagId: $tagName and type: $storageType");
             }
         }
 
