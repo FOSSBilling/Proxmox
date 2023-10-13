@@ -131,7 +131,8 @@
                                 {{ 'CIDR' | trans }}:    
                             </label>
                             <div class="col">
-                                <input class="form-control" type="text" id='cidr' name="cidr" value="" required placeholder="{{ 'Unique, non overlapping network in CIDR Notation (A.B.C.D/24)' | trans }}">
+                                <input class="form-control" type="text" id='cidr' name="cidr" value="/24" required placeholder="{{ 'Unique, non overlapping network in CIDR Notation (A.B.C.D/24)' | trans }}">
+                            <span id="cidr-validation-error" style="display: none; color: red;">Please enter a valid IP in CIDR notation.</span>
                             </div>
                         </div>
                         <div class="mb-3 row">
@@ -506,7 +507,23 @@
          }
          return result.join('.');
      }
-     
+     function isValidCIDR(cidr) {
+        var ipPart = cidr.split('/')[0]; // Extract IP from CIDR notation
+        var subnetPart = cidr.split('/')[1]; // Extract subnet
+
+        // Validate IP address part
+        var ipPattern = /^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$/;
+        if (!ipPattern.test(ipPart)) {
+            return false;
+        }
+
+        // Validate subnet part
+        if (!subnetPart || isNaN(subnetPart) || parseInt(subnetPart) < 0 || parseInt(subnetPart) > 32) {
+            return false;
+        }
+
+        return true;
+    }
      function updateOutput(value) {
         var output = document.getElementById('subnet_sizeOutput');
         var cidrInput = document.getElementById('cidr');
@@ -522,7 +539,8 @@
         var gatewayIpLong = ip2long(gatewayInput.value);
         var ipStartLong = ip2long(ipRange[0]);
         var ipEndLong = ip2long(ipRange[1]);
-
+        var nextIpLong = ip2long(ipRange[0]) + 1;
+        gatewayInput.placeholder = long2ip(nextIpLong);
         if (gatewayIpLong < ipStartLong || gatewayIpLong > ipEndLong) {
             gatewayInput.setCustomValidity('The gateway IP is not within the network range!');
             errorSpan.style.display = 'block';
@@ -546,17 +564,39 @@
          })
      })
      
+     document.getElementById('cidr').addEventListener('input', function() {
+        var cidrInput = this.value;
+        var errorSpan = document.getElementById('cidr-validation-error');
+        if (!isValidCIDR(cidrInput)) {
+            this.setCustomValidity('Please specify a valid IP in CIDR Notation (A.B.C.D/24)!');
+            errorSpan.style.display = 'block';
+            // You can add more code here to handle the invalid format, e.g. reset the input or highlight the field.
+        } else {
+            var subnetSizeInput = document.getElementById('subnet_size');
+            var ip = cidrInput.split('/')[0]; // get the IP part of the CIDR notation
+            subnetSizeInput.value = 32 - cidrInput.split('/')[1];
+            updateOutput(subnetSizeInput.value);
+            this.setCustomValidity('');
+            errorSpan.style.display = 'none';
+        }
+
+    });
      document.getElementById('gateway').addEventListener('input', function() {
         var subnetSizeInput = document.getElementById('subnet_size');
         var cidrInput = document.getElementById('cidr');
         var ip = cidrInput.value.split('/')[0]; // get the IP part of the CIDR notation
-        var ipRange = calculateIPRange(ip, 32 - subnetSizeInput);
+        subnetSizeInput.value = 32 - cidrInput.value.split('/')[1];
+
+        console.log('subnetSizeInput: ' + subnetSizeInput.value);
+        var ipRange = calculateIPRange(ip, 32 - subnetSizeInput.value);
+        console.log('ipRange: ' + ipRange);
         var gatewayInput = document.getElementById('gateway');
         var errorSpan = document.getElementById('gateway-validation-error');
         var gatewayIpLong = ip2long(gatewayInput.value);
+
         var ipStartLong = ip2long(ipRange[0]);
         var ipEndLong = ip2long(ipRange[1]);
-
+        console.log('All gateway Info:' + gatewayIpLong + ' ' + ipStartLong + ' ' + ipEndLong);
         if (gatewayIpLong < ipStartLong || gatewayIpLong > ipEndLong) {
             gatewayInput.setCustomValidity('The gateway IP is not within the network range!');
             errorSpan.style.display = 'block';
