@@ -62,10 +62,12 @@ class Client extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        $client = $this->getIdentity();
+
         $order = $this->di['db']->findOne(
             'client_order',
-            "id=:id",
-            array(':id' => $data['order_id'])
+            "id=:id AND client_id=:client_id",
+            array(':id' => $data['order_id'], ':client_id' => $client->id)
         );
         if (!$order) {
             throw new \Box_Exception('Order not found');
@@ -216,5 +218,36 @@ class Client extends \Api_Abstract
     {
         $appjs = $this->getService()->get_novnc_appjs($data);
         return $appjs;
+    }
+
+    /**
+     * Get VNC proxy ticket and connection info
+     */
+    public function vm_vncproxy($data)
+    {
+        $required = array(
+            'order_id'    => 'Order ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $order = $this->di['db']->findOne(
+            'client_order',
+            "id=:id",
+            array(':id' => $data['order_id'])
+        );
+        if (!$order) {
+            throw new \Box_Exception('Order not found');
+        }
+
+        $service = $this->di['db']->findOne(
+            'service_proxmox',
+            "order_id=:id",
+            array(':id' => $data['order_id'])
+        );
+        if (!$service) {
+            throw new \Box_Exception('Proxmox service not found');
+        }
+
+        return $this->getService()->vm_vncproxy($order, $service);
     }
 }

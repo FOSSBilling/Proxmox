@@ -32,13 +32,59 @@
         <h2>
             {{ 'Console' | trans }}
         </h2>
-        1
                 
-        {% if server.status == "running" %}
-            <!-- TODO: implement vnc console -->
-                {% else %}
-                {{ 'The server needs to be running' | trans }}
-            {% endif %}
+        {% if vm.status == "running" %}
+            <button class="btn btn-info" id="btn-open-console">{{ 'Open Console' | trans }}</button>
+            <script>
+                document.getElementById('btn-open-console').addEventListener('click', function() {
+                    API.client.post('serviceproxmox/vm_vncproxy', {
+                        order_id: {{ order.id }},
+                        CSRFToken: "{{ CSRFToken }}"
+                    }, function(response) {
+                        if (response.ticket) {
+                            // We construct a Data URI or use document.write to inject a simple NoVNC viewer.
+                            // This viewer loads the NoVNC library (proxied by FOSSBilling) and connects via WebSocket
+                            // directly to the Proxmox server using the ticket.
+
+                            var wss_url = "wss://" + response.hostname + ":8006/api2/json/nodes/" + response.node + "/" + response.type + "/" + response.vmid + "/vncwebsocket?port=" + response.port + "&vncticket=" + encodeURIComponent(response.ticket);
+
+                            var win = window.open("", "_blank", "width=1024,height=768");
+                            var html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Console: ` + response.vmid + `</title>
+    <style>body { margin: 0; background-color: #333; height: 100%; display: flex; align-items: center; justify-content: center; }</style>
+    <!-- Load noVNC scripts proxied via FOSSBilling -->
+    <script type="module" crossorigin="anonymous">
+        import RFB from '/serviceproxmox/novnc/core/rfb.js';
+
+        // Connection details
+        const url = "` + wss_url + `";
+
+        // UI
+        const rfb = new RFB(document.getElementById('screen'), url);
+        rfb.scaleViewport = true;
+        rfb.resizeSession = true;
+
+        rfb.addEventListener("connect",  () => { console.log("Connected to " + url); });
+        rfb.addEventListener("disconnect", () => { console.log("Disconnected"); });
+        rfb.addEventListener("credentialsrequired", () => { console.log("Credentials required"); });
+    <\/script>
+</head>
+<body>
+    <div id="screen"></div>
+</body>
+</html>`;
+                            win.document.write(html);
+                            win.document.close();
+                        }
+                    });
+                });
+            </script>
+        {% else %}
+            {{ 'The server needs to be running to open the console.' | trans }}
+        {% endif %}
         </p>
 
     {% endif %}

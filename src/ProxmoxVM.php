@@ -233,4 +233,38 @@ trait ProxmoxVM
 			throw new \Box_Exception("Login to Proxmox Host failed.");
 		}
 	}
+
+	/**
+	 * Get VNC proxy ticket
+	 * @param $order
+	 * @param $service
+	 * @return array
+	 */
+	public function vm_vncproxy($order, $service)
+	{
+		$product = $this->di['db']->load('product', $order->product_id);
+		$product_config = json_decode($product->config, 1);
+		$client = $this->di['db']->load('client', $order->client_id);
+		$server = $this->di['db']->findOne('service_proxmox_server', 'id=:id', array(':id' => $service->server_id));
+
+		$proxmox = $this->getProxmoxInstance($server);
+		if ($proxmox->login()) {
+			$res = $proxmox->post("/nodes/" . $server->name . "/" . $product_config['virt'] . "/" . $service->vmid . "/vncproxy", array(
+				'websocket' => 1
+			));
+
+			// We need to return info to construct the connection URL
+			return array(
+				'ticket' => $res['ticket'],
+				'port' => $res['port'],
+				'cert' => $res['cert'], // This is the fingerprint
+				'node' => $server->name,
+				'vmid' => $service->vmid,
+				'type' => $product_config['virt'],
+				'hostname' => $this->find_access($server), // Hostname/IP of the Proxmox server
+			);
+		} else {
+			throw new \Box_Exception("Login to Proxmox Host failed.");
+		}
+	}
 }

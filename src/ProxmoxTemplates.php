@@ -59,8 +59,12 @@ trait ProxmoxTemplates
 		$qemu_templates = $this->di['db']->findAll('service_proxmox_qemu_template');
 		// Get server name for each template
 		foreach ($qemu_templates as $qemu_template) {
-			$server = $this->di['db']->getExistingModelById('service_proxmox_server', $qemu_template->server_id);
-			$qemu_template->server_name = $server->name;
+			$server = $this->di['db']->load('service_proxmox_server', $qemu_template->server_id);
+			if ($server) {
+				$qemu_template->server_name = $server->name;
+			} else {
+				$qemu_template->server_name = 'Unknown';
+			}
 		}
 		return $qemu_templates;
 	}
@@ -73,7 +77,10 @@ trait ProxmoxTemplates
 	 */
 	public function get_vmconfig($id)
 	{
-		$template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $id);
+		$template = $this->di['db']->load('service_proxmox_vm_config_template', $id);
+		if (!$template->id) {
+			throw new \Box_Exception('VM Configuration Template not found');
+		}
 		return $template;
 	}
 
@@ -85,7 +92,10 @@ trait ProxmoxTemplates
 	 */
 	public function get_lxc_conftempl($id)
 	{
-		$template = $this->di['db']->getExistingModelById('service_proxmox_lxc_config_template', $id);
+		$template = $this->di['db']->load('service_proxmox_lxc_config_template', $id);
+		if (!$template->id) {
+			throw new \Box_Exception('LXC Configuration Template not found');
+		}
 		return $template;
 	}
 
@@ -97,7 +107,7 @@ trait ProxmoxTemplates
 	 */
 	public function getCompleteLxcTemplate($id)
 	{
-		$template = $this->di['db']->getExistingModelById('service_proxmox_lxc_config_template', $id);
+		$template = $this->di['db']->load('service_proxmox_lxc_config_template', $id);
 		$storage = $this->di['db']->findOne('service_proxmox_lxc_storage_template', 'template_id = ?', array($id));
 		$network = $this->di['db']->findOne('service_proxmox_lxc_network_template', 'template_id = ?', array($id));
 
@@ -116,7 +126,7 @@ trait ProxmoxTemplates
 	 */
 	public function getCompleteVmTemplate($id)
 	{
-		$template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $id);
+		$template = $this->di['db']->load('service_proxmox_vm_config_template', $id);
 		$storage = $this->di['db']->findOne('service_proxmox_vm_storage_template', 'template_id = ?', array($id));
 		$network = $this->di['db']->findOne('service_proxmox_vm_network_template', 'template_id = ?', array($id));
 
