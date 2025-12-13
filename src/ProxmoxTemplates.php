@@ -90,6 +90,44 @@ trait ProxmoxTemplates
 	}
 
 	/**
+	 * Get the full Linux container configuration template by ID, including storage and network.
+	 *
+	 * @param int $id The ID of the template to retrieve.
+	 * @return array The Linux container configuration template with storage and network.
+	 */
+	public function getCompleteLxcTemplate($id)
+	{
+		$template = $this->di['db']->getExistingModelById('service_proxmox_lxc_config_template', $id);
+		$storage = $this->di['db']->findOne('service_proxmox_lxc_storage_template', 'template_id = ?', array($id));
+		$network = $this->di['db']->findOne('service_proxmox_lxc_network_template', 'template_id = ?', array($id));
+
+		return array(
+			'config' => $template,
+			'storage' => $storage,
+			'network' => $network
+		);
+	}
+
+	/**
+	 * Get the full VM configuration template by ID, including storage and network.
+	 *
+	 * @param int $id The ID of the template to retrieve.
+	 * @return array The VM configuration template with storage and network.
+	 */
+	public function getCompleteVmTemplate($id)
+	{
+		$template = $this->di['db']->getExistingModelById('service_proxmox_vm_config_template', $id);
+		$storage = $this->di['db']->findOne('service_proxmox_vm_storage_template', 'template_id = ?', array($id));
+		$network = $this->di['db']->findOne('service_proxmox_vm_network_template', 'template_id = ?', array($id));
+
+		return array(
+			'config' => $template,
+			'storage' => $storage,
+			'network' => $network
+		);
+	}
+
+	/**
 	 * Get all tags of a certain type.
 	 *
 	 * @param array $data An array containing the type of tags to retrieve.

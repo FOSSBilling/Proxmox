@@ -585,45 +585,132 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 			$container_settings = array();
 			$description = 'Service package ' . $model->id . ' belonging to client id: ' . $client->id;
 
-			if ($product_config['clone'] == true) {
-				$clone = '/' . $product_config['cloneid'] . '/clone';
+			if ($product_config['virt'] == 'lxc') {
+				if (empty($product_config['lxc-templ'])) {
+					throw new \Box_Exception('No LXC Template selected for this product.');
+				}
+
+				$templateData = $this->getCompleteLxcTemplate($product_config['lxc-templ']);
+				if (!$templateData['config']) {
+					throw new \Box_Exception('LXC Template not found.');
+				}
+
+				// Basic LXC settings
 				$container_settings = array(
-					'newid' => $vmid,
-					'name' => $model->username,
+					'vmid' => $vmid,
+					'hostname' => 'vm' . $vmid,
 					'description' => $description,
-					'full' => true
+					'memory' => $templateData['config']->memory,
+					'swap' => $templateData['config']->swap,
+					'cores' => $templateData['config']->cores,
+					'ostemplate' => $templateData['config']->ostemplate,
+					'password' => $proxmoxuser_password,
+					'onboot' => $templateData['config']->onboot ? 1 : 0,
+					'pool' => 'fb_client_' . $client->id,
 				);
-			} else { // TODO: Implement Container templates 
-				if ($product_config['virt'] == 'qemu') {
+
+				// Storage
+				if ($templateData['storage']) {
+					// Format: storage_name:size_in_gb
+					$container_settings['rootfs'] = $templateData['storage']->storage_type . ':' . $templateData['storage']->size;
+				} else {
+					throw new \Box_Exception('LXC Storage Template not found.');
+				}
+
+				// Network
+				if ($templateData['network']) {
+					// Example: name=eth0,bridge=vmbr0,firewall=1,ip=dhcp,type=veth
+					// We construct the net0 string.
+					// Assumption: using 'name=eth0' as standard.
+					$net0 = "name=eth0,bridge=" . $templateData['network']->bridge;
+					if ($templateData['network']->firewall) {
+						$net0 .= ",firewall=1";
+					}
+					if ($templateData['network']->tag) {
+						$net0 .= ",tag=" . $templateData['network']->tag;
+					}
+					// Default to DHCP for now or if IPAM implemented, use it.
+					// For now, assuming DHCP or manual configuration inside container for simple setup
+					$net0 .= ",ip=dhcp";
+					$net0 .= ",type=" . ($templateData['network']->network_type ? $templateData['network']->network_type : 'veth');
+
+					$container_settings['net0'] = $net0;
+				}
+
+			} else { // QEMU
+				// Check if cloning or creating from scratch
+				// Assuming 'clone' logic was intended for linking to an existing VM Template on Proxmox
+				if (isset($product_config['clone']) && $product_config['clone'] == true) {
+					$clone = '/' . $product_config['cloneid'] . '/clone';
 					$container_settings = array(
-						'vmid' => $vmid,
-						'name' => 'vm' . $vmid,              
-						'node' => $server->name, 
+						'newid' => $vmid,
+						'name' => $model->username ? $model->username : 'vm' . $vmid,
 						'description' => $description,
-						'storage' => $product_config['storage'],
-						'memory' => $product_config['memory'],
-						'scsihw' => 'virtio-scsi-single',
-						'scsi0' => "Storage01:10",
-						'ostype' => "other",
-						'kvm' => "0",
-						'ide2' => $product_config['cdrom'] . ',media=cdrom',
-						'sockets' => $product_config['cpu'],
-						'cores' => $product_config['cpu'],
-						'numa' => "0",
+						'full' => true,
 						'pool' => 'fb_client_' . $client->id,
 					);
+					// If cloning, we might still want to override some resources from the FOSSBilling template if provided
+					// But usually cloning inherits. For now, keeping simple clone logic but adding pool.
 				} else {
+					if (empty($product_config['vmconftempl'])) {
+						throw new \Box_Exception('No VM Configuration Template selected for this product.');
+					}
+
+					$templateData = $this->getCompleteVmTemplate($product_config['vmconftempl']);
+					if (!$templateData['config']) {
+						throw new \Box_Exception('VM Template not found.');
+					}
+
 					$container_settings = array(
 						'vmid' => $vmid,
-						'hostname' => 'vm' . $vmid,
+						'name' => 'vm' . $vmid,
+						'node' => $server->name,
 						'description' => $description,
-						'storage' => $product_config['storage'],
-						'memory' => $product_config['memory'],
-						'ostemplate' => $product_config['ostemplate'],
-						'password' => $proxmoxuser_password,
-						'net0' => $product_config['network']
+						'memory' => $templateData['config']->memory,
+						'sockets' => 1, // Default to 1 socket
+						'cores' => $templateData['config']->cores,
+						'agent' => $templateData['config']->agent ? 1 : 0,
+						'onboot' => $templateData['config']->onboot ? 1 : 0,
+						'scsihw' => 'virtio-scsi-single', // Modern default
+						'ostype' => $templateData['config']->os ? $templateData['config']->os : 'other',
+						'kvm' => "1", // Default to KVM enabled
+						'pool' => 'fb_client_' . $client->id,
 					);
-					// TODO: Storage for LXC
+
+					// Storage
+					if ($templateData['storage']) {
+						$storageStr = $templateData['storage']->storage_type . ':' . $templateData['storage']->size;
+						// Use controller from template if available, else default to scsi0
+						// In Proxmox, drives are scsi0, scsi1, virtio0, ide0 etc.
+						// service_proxmox_vm_storage_template has 'controller' field which likely holds 'scsi0' or similar
+						$controller = $templateData['storage']->controller ? $templateData['storage']->controller : 'scsi0';
+						$container_settings[$controller] = $storageStr;
+
+						// If booting from this disk, we might need to set 'boot' order.
+						// Proxmox default is usually fine if only one disk.
+					}
+
+					// Network
+					if ($templateData['network']) {
+						// e.g. model=virtio,bridge=vmbr0,firewall=1
+						$net0 = "model=" . ($templateData['network']->model ? $templateData['network']->model : 'virtio');
+						$net0 .= ",bridge=" . $templateData['network']->bridge;
+						if ($templateData['network']->firewall) {
+							$net0 .= ",firewall=1";
+						}
+						if ($templateData['network']->tag) {
+							$net0 .= ",tag=" . $templateData['network']->tag;
+						}
+						$container_settings['net0'] = $net0;
+					}
+
+					// CDROM
+					// If template has an OS installation ISO defined, we might need it.
+					// But the current template table doesn't seem to have 'iso' field.
+					// The old code used $product_config['cdrom']. We can keep that as an optional override/setting if it exists.
+					if (!empty($product_config['cdrom'])) {
+						$container_settings['ide2'] = $product_config['cdrom'] . ',media=cdrom';
+					}
 				}
 			}
 
